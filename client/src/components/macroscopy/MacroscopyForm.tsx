@@ -63,9 +63,10 @@ const MacroscopyForm = () => {
             }
 
             setTimeout(() => setSuccess(false), 3000);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error saving macroscopy:', error);
-            alert('Erro ao salvar. Verifique se o número da guia já existe.');
+            const msg = error.response?.data?.error || error.message || 'Erro desconhecido';
+            alert(`Erro ao salvar: ${msg}`);
         } finally {
             setLoading(false);
         }
