@@ -3,42 +3,34 @@ import { FlaskConical, Stethoscope, Package, Plus, Layers, TestTube } from 'luci
 import StatsCard from '../components/dashboard/StatsCard';
 import ModuleCard from '../components/dashboard/ModuleCard';
 import RecentActivity from '../components/dashboard/RecentActivity';
-// import axios from 'axios';
-
-// Mock data for initial render until backend is ready
-const mockStats = {
-    macroscopy: 0,
-    jars: 0,
-    fragments: 0,
-    cassettes: 0
-};
 
 const mockActivity: any[] = [];
 
+import api from '../services/api';
+
 const Dashboard = () => {
-    const [stats, setStats] = useState(mockStats);
-    const [recent, setRecent] = useState(mockActivity);
+    const [stats, setStats] = useState({
+        macroscopy: 0,
+        jars: 0,
+        fragments: 0,
+        cassettes: 0
+    });
+    const [recent, setRecent] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
-            // Fake usage to satisfy linter
-            if (false) {
-                setStats(mockStats);
-                setRecent(mockActivity);
-            }
-
             try {
-                // In a real scenario, use VITE_API_URL
-                // const statsRes = await axios.get('http://localhost:3001/api/dashboard/stats');
-                // const recentRes = await axios.get('http://localhost:3001/api/dashboard/recent');
-                // setStats(statsRes.data);
-                // setRecent(recentRes.data);
+                const [statsRes, recentRes] = await Promise.all([
+                    api.get('/api/dashboard/stats'),
+                    api.get('/api/dashboard/recent')
+                ]);
 
-                // For now, simulate loading
-                setTimeout(() => setLoading(false), 500);
+                setStats(statsRes.data);
+                setRecent(recentRes.data);
             } catch (error) {
                 console.error("Failed to fetch dashboard data", error);
+            } finally {
                 setLoading(false);
             }
         };
