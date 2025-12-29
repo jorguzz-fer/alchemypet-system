@@ -1,6 +1,7 @@
-import { ReactNode, useState } from 'react';
+import type { ReactNode } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, FlaskConical, Stethoscope, LayoutDashboard, Plus, Settings, LogOut } from 'lucide-react';
+import { Menu, X, FlaskConical, Stethoscope, LayoutDashboard, Settings, LogOut } from 'lucide-react';
 import clsx from 'clsx';
 
 interface DashboardLayoutProps {
