@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// MACROSCOPIA GERAL
+
+model MacroscopyRecord {
+  id              Int       @id @default(autoincrement())
+  numero_guia     String    @unique @map("numero_guia")
+  nome_paciente   String    @map("nome_paciente")
+  data_registro   DateTime  @default(now()) @map("data_registro")
+  status          String    @default("em_analise")
+  total_frascos   Int       @default(0) @map("total_frascos")
+  total_fragmentos Int      @default(0) @map("total_fragmentos")
+  total_cassetes  Int       @default(0) @map("total_cassetes")
+  created_at      DateTime  @default(now()) @map("created_at")
+  updated_at      DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  jars            Jar[]
+  images          Image[]
+
+  @@index([numero_guia])
+  @@index([data_registro])
+  @@map("registros_macroscopia")
+}
+
+model Jar {
+  id              Int       @id @default(autoincrement())
+  registro_id     Int
+  numero          Int
+  quantidade_fragmentos Int @default(0) @map("quantidade_fragmentos")
+  created_at      DateTime  @default(now()) @map("created_at")
+
+  record          MacroscopyRecord @relation(fields: [registro_id], references: [id], onDelete: Cascade)
+  fragments       Fragment[]
+
+  @@index([registro_id])
+  @@map("frascos")
+}
+
+model Fragment {
+  id              Int       @id @default(autoincrement())
+  frasco_id       Int
+  numero          Int
+  caracteristicas String[]  
+  medidas         String?
+  medidas_nodulo  String?   @map("medidas_nodulo")
+  aparencia       String[]
+  consistencia    String[]
+  aspecto_nodulo  String[]  @map("aspecto_nodulo")
+  cor             String[]
+  representacao   String[]
+  observacoes     String?
+  created_at      DateTime  @default(now()) @map("created_at")
+
+  jar             Jar       @relation(fields: [frasco_id], references: [id], onDelete: Cascade)
+  cassettes       Cassette[]
+  images          Image[]
+
+  @@index([frasco_id])
+  @@map("fragmentos")
+}
+
+model Cassette {
+  id                Int       @id @default(autoincrement())
+  fragmento_id      Int
+  codigo            String
+  numero_sequencial Int       @map("numero_sequencial")
+  created_at        DateTime  @default(now()) @map("created_at")
+
+  fragment          Fragment  @relation(fields: [fragmento_id], references: [id], onDelete: Cascade)
+
+  @@map("cassetes")
+}
+
+model Image {
+  id              Int       @id @default(autoincrement())
+  registro_id     Int
+  fragmento_id    Int?
+  url             String
+  nome_arquivo    String?   @map("nome_arquivo")
+  tipo            String    // 'amostra', 'cassete', 'geral'
+  created_at      DateTime  @default(now()) @map("created_at")
+
+  record          MacroscopyRecord @relation(fields: [registro_id], references: [id], onDelete: Cascade)
+  fragment        Fragment?        @relation(fields: [fragmento_id], references: [id])
+
+  @@map("imagens")
+}
+
+// MACROSCOPIA MAMARIA
+
+model MammaryRecord {
+  id                Int       @id @default(autoincrement())
+  numero_guia       String    @unique @map("numero_guia")
+  nome_paciente     String    @map("nome_paciente")
+  idade             Int?
+  data_coleta       DateTime? @map("data_coleta")
+  medico_solicitante String?  @map("medico_solicitante")
+  procedencia       String?
+  
+  // Specimen Data
+  tipo_especime     String?   @map("tipo_especime")
+  localizacao       String?
+  lateralidade      String?
+  dimensoes         String?
+  peso              Decimal?  @db.Decimal(10, 2)
+  
+  // Macroscopic Description
+  aspecto_macroscopico String? @map("aspecto_macroscopico") @db.Text
+  consistencia      String?
+  superficie_corte  String?   @map("superficie_corte") @db.Text
+  margens           String?   @db.Text
+  
+  // Specific Structures
+  pele              String?   @db.Text
+  areola            String?   @db.Text
+  mamilo            String?   @db.Text
+  tecido_adiposo    String?   @map("tecido_adiposo") @db.Text
+  
+  observacoes       String?   @db.Text
+  
+  status            String    @default("em_analise")
+  data_registro     DateTime  @default(now()) @map("data_registro")
+  created_at        DateTime  @default(now()) @map("created_at")
+  updated_at        DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  jars              MammaryJar[]
+  images            MammaryImage[]
+
+  @@map("registros_mamaria")
+}
+
+model MammaryJar {
+  id              Int       @id @default(autoincrement())
+  registro_id     Int
+  numero          String
+  conteudo        String?   @db.Text
+  dimensoes       String?
+  fixador         String?   @default("Formol 10%")
+  created_at      DateTime  @default(now()) @map("created_at")
+
+  record          MammaryRecord @relation(fields: [registro_id], references: [id], onDelete: Cascade)
+  images          MammaryImage[] // Assuming images can be linked to jars too, though spec said direct link? Checking spec... 
+  // Spec: "frasco_id INTEGER REFERENCES frascos_mamaria(id)" in images_mamaria. Yes.
+
+  @@map("frascos_mamaria")
+}
+
+model MammaryImage {
+  id              Int       @id @default(autoincrement())
+  registro_id     Int
+  frasco_id       Int?
+  url             String
+  nome_arquivo    String?   @map("nome_arquivo")
+  tipo            String?
+  created_at      DateTime  @default(now()) @map("created_at")
+
+  record          MammaryRecord @relation(fields: [registro_id], references: [id], onDelete: Cascade)
+  jar             MammaryJar?   @relation(fields: [frasco_id], references: [id])
+
+  @@map("imagens_mamaria")
+}

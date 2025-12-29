@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: alchemypet-db
+    environment:
+      POSTGRES_USER: alchemypet
+      POSTGRES_PASSWORD: alchemypet_password
+      POSTGRES_DB: alchemypet
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: alchemypet-server
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://alchemypet:alchemypet_password@db:5432/alchemypet
+      - PORT=3001
+    depends_on:
+      - db
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+      - uploads:/app/uploads
+    command: npm run dev
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: alchemypet-client
+    ports:
+      - "3000:5173"
+    environment:
+      - VITE_API_URL=http://localhost:3001
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    command: npm run dev
+
+volumes:
+  postgres_data:
+  uploads:
