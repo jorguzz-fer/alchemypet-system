@@ -176,10 +176,13 @@ export const updateMacroscopy = async (req: Request, res: Response) => {
         const { id } = req.params;
         const { jars, ...data } = req.body;
 
+        // Sanitize payload: remove id, created_at, updated_at, and jars (already extracted)
+        const { id: _id, created_at, updated_at, ...updateData } = data;
+
         // Update Main Record
         const record = await prisma.macroscopyRecord.update({
             where: { id: parseInt(id) },
-            data: { ...data }
+            data: updateData
         });
 
         // Simplified Nested Update Logic:
