@@ -1,4 +1,4 @@
-import { X, Copy, ArrowLeft } from 'lucide-react';
+import { Copy, ArrowLeft } from 'lucide-react';
 import { generateMacroscopyReport } from '../../utils/textUtils';
 
 interface MacroscopyReportModalProps {

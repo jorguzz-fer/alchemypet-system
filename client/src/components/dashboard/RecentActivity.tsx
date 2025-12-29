@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileText, Clock, FileJson } from 'lucide-react';
+import { FileText, Clock } from 'lucide-react';
 import api from '../../services/api';
 import MacroscopyReportModal from '../macroscopy/MacroscopyReportModal';
 
