@@ -3,17 +3,37 @@ import prisma from '../prisma/client';
 
 export const createMacroscopy = async (req: Request, res: Response) => {
     try {
-        const { numero_guia, nome_paciente, ...data } = req.body;
+        const { numero_guia, nome_paciente, jars, ...data } = req.body;
 
         if (!numero_guia || !nome_paciente) {
             return res.status(400).json({ error: 'Número da guia e Nome do paciente são obrigatórios' });
         }
 
+        // Prepare Prisma Nested Write
+        const jarsCreateInput = jars && Array.isArray(jars) ? {
+            create: jars.map((jar: any) => ({
+                numero: jar.numero,
+                fragments: {
+                    create: jar.fragments ? jar.fragments.map((frag: any, index: number) => ({
+                        numero: frag.numero || (index + 1), // Default to index + 1 if missing
+                        cor: frag.cor,
+                        consistencia: frag.consistencia,
+                        medidas: frag.medidas,
+                        representacao: frag.representacao,
+                        medidas_nodulo: frag.medidas_nodulo,
+                        aspecto_nodulo: frag.aspecto_nodulo,
+                        aparencia: frag.aparencia,
+                    })) : []
+                }
+            }))
+        } : undefined;
+
         const record = await prisma.macroscopyRecord.create({
             data: {
                 numero_guia,
                 nome_paciente,
-                ...data
+                ...data, // status, etc
+                jars: jarsCreateInput
             },
             include: {
                 jars: {
@@ -35,7 +55,7 @@ export const createMacroscopy = async (req: Request, res: Response) => {
         if (error.code === 'P2002') {
             return res.status(409).json({ error: 'Número de guia já existe' });
         }
-        res.status(500).json({ error: 'Falha ao criar registro' });
+        res.status(500).json({ error: `Falha ao criar registro: ${error.message}` });
     }
 };
 
