@@ -1,13 +1,11 @@
-import { useState, useEffect } from 'react';
 import { Plus, X, Tag } from 'lucide-react';
 
 interface CassetteListProps {
-    fragments: any; // Parent fragment data to derive IDs if needed
     cassettes: any[];
     onUpdate: (cassettes: any[]) => void;
 }
 
-const CassetteList = ({ fragments, cassettes, onUpdate }: CassetteListProps) => {
+const CassetteList = ({ cassettes, onUpdate }: CassetteListProps) => {
     // Determine the next cassette number/letter based on existing ones could be complex, 
     // but for now we'll just suggest "Cassete X". 
     // A better approach for "v14" might come later, but for now simple increment.

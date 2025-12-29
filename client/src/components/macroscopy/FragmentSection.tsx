@@ -1,5 +1,4 @@
-import { useState, useRef } from 'react';
-import { X, ChevronDown, Plus } from 'lucide-react';
+import { X } from 'lucide-react';
 import CassetteList from './CassetteList';
 
 interface FragmentSectionProps {
@@ -186,7 +185,6 @@ const FragmentSection = ({ index, fragment, onUpdate, onRemove }: FragmentSectio
 
                     {/* Cassettes Component */}
                     <CassetteList
-                        fragments={fragment}
                         cassettes={safeFragment.cassettes}
                         onUpdate={(v) => updateField('cassettes', v)}
                     />
