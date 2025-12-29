@@ -5,6 +5,11 @@ COPY package*.json ./
 # Install ALL dependencies (including devDependencies like typescript)
 RUN npm install
 COPY . .
+
+# Capture Environment Variable at Build Time
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 RUN npm run build
 
 # Production Stage
