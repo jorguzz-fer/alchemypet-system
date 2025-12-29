@@ -26,10 +26,8 @@ const MacroscopyForm = () => {
             ...formData,
             jars: [
                 ...formData.jars,
-                jars: [
-                    ...formData.jars,
-                    { numero: String(formData.jars.length + 1), fragments: [] }
-                ]
+                { numero: String(formData.jars.length + 1), fragments: [] }
+            ]
         });
     };
 
