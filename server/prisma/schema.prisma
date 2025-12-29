@@ -32,7 +32,7 @@ model MacroscopyRecord {
 model Jar {
   id              Int       @id @default(autoincrement())
   registro_id     Int
-  numero          Int
+  numero          String
   quantidade_fragmentos Int @default(0) @map("quantidade_fragmentos")
   created_at      DateTime  @default(now()) @map("created_at")
 

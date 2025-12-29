@@ -36,7 +36,15 @@ const JarCard = ({ index, jar, onUpdate, onRemove }: JarCardProps) => {
                     <div className="bg-purple-100 p-1.5 rounded-full text-purple-600">
                         <TestTube size={18} />
                     </div>
-                    <span className="font-semibold text-gray-700">Frasco #{index + 1}</span>
+                    <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-700">Frasco:</span>
+                        <input
+                            type="text"
+                            value={jar.numero}
+                            onChange={(e) => onUpdate(index, { ...jar, numero: e.target.value })}
+                            className="w-20 px-2 py-1 text-sm border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500 font-semibold text-gray-700"
+                        />
+                    </div>
                 </div>
                 <button onClick={() => onRemove(index)} className="text-sm text-red-500 hover:text-red-700">
                     Remover Frasco

@@ -12,7 +12,7 @@ export const createMacroscopy = async (req: Request, res: Response) => {
         // Prepare Prisma Nested Write
         const jarsCreateInput = jars && Array.isArray(jars) ? {
             create: jars.map((jar: any) => ({
-                numero: jar.numero,
+                numero: String(jar.numero), // Ensure String
                 fragments: {
                     create: jar.fragments ? jar.fragments.map((frag: any, index: number) => ({
                         numero: frag.numero || (index + 1),
@@ -23,7 +23,7 @@ export const createMacroscopy = async (req: Request, res: Response) => {
                         medidas_nodulo: frag.medidas_nodulo,
                         aspecto_nodulo: frag.aspecto_nodulo || [],
                         aparencia: frag.aparencia || [],
-                        caracteristicas: [], // Default empty as it's required by schema but not in form
+                        caracteristicas: [],
                     })) : []
                 }
             }))
@@ -121,7 +121,7 @@ export const addJar = async (req: Request, res: Response) => {
         const jar = await prisma.jar.create({
             data: {
                 registro_id: parseInt(id),
-                numero: parseInt(numero)
+                numero: String(numero) // Ensure String
             }
         });
 
@@ -183,9 +183,6 @@ export const updateMacroscopy = async (req: Request, res: Response) => {
         });
 
         // Simplified Nested Update Logic:
-        // Ideally, we should check which jars exist and update/create accordingly.
-        // For this specific 'Document Save' interaction, we will iterate and Upsert where possible or Create.
-
         if (jars && Array.isArray(jars)) {
             for (const jar of jars) {
                 let jarId = jar.id;
@@ -195,7 +192,7 @@ export const updateMacroscopy = async (req: Request, res: Response) => {
                     const newJar = await prisma.jar.create({
                         data: {
                             registro_id: parseInt(id),
-                            numero: jar.numero
+                            numero: String(jar.numero)
                         }
                     });
                     jarId = newJar.id;
@@ -210,21 +207,24 @@ export const updateMacroscopy = async (req: Request, res: Response) => {
                                 data: {
                                     frasco_id: jarId,
                                     numero: fragment.numero || 0,
-                                    cor: fragment.cor,
-                                    consistencia: fragment.consistencia,
+                                    cor: fragment.cor ? [fragment.cor] : [],
+                                    consistencia: fragment.consistencia ? [fragment.consistencia] : [],
                                     medidas: fragment.medidas,
-                                    representacao: fragment.representacao
+                                    representacao: fragment.representacao ? [fragment.representacao] : [],
+                                    caracteristicas: [],
+                                    aparencia: [],
+                                    aspecto_nodulo: []
                                 }
                             });
                         } else {
-                            // Update fragment (optional, if we want to support editing existing fragments)
+                            // Update fragment (optional)
                             await prisma.fragment.update({
                                 where: { id: fragment.id },
                                 data: {
-                                    cor: fragment.cor,
-                                    consistencia: fragment.consistencia,
+                                    cor: fragment.cor ? [fragment.cor] : [],
+                                    consistencia: fragment.consistencia ? [fragment.consistencia] : [],
                                     medidas: fragment.medidas,
-                                    representacao: fragment.representacao
+                                    representacao: fragment.representacao ? [fragment.representacao] : []
                                 }
                             });
                         }
@@ -234,8 +234,8 @@ export const updateMacroscopy = async (req: Request, res: Response) => {
         }
 
         res.json(record);
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error updating record:', error);
-        res.status(500).json({ error: 'Falha ao atualizar registro' });
+        res.status(500).json({ error: `Falha ao atualizar registro: ${error.message}` });
     }
 };
