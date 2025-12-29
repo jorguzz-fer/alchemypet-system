@@ -3,14 +3,22 @@ import { Plus, Save, Loader2 } from 'lucide-react';
 import api from '../../services/api';
 import JarCard from './JarCard';
 
+interface FormData {
+    id?: number;
+    numero_guia: string;
+    nome_paciente: string;
+    status: string;
+    jars: any[];
+}
+
 const MacroscopyForm = () => {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<FormData>({
         numero_guia: '',
         nome_paciente: '',
         status: 'em_analise',
-        jars: [] as any[]
+        jars: []
     });
 
     const addJar = () => {
