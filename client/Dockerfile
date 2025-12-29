@@ -9,15 +9,15 @@ RUN npm run build
 
 # Production Stage
 FROM nginx:alpine
+
+# Copy custom nginx config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy built assets from build stage
 COPY --from=build /app/dist /usr/share/nginx/html
-# React Router support: fallback to index.html for unknown routes
-RUN echo 'server { \
-    listen 80; \
-    location / { \
-    root /usr/share/nginx/html; \
-    index index.html index.htm; \
-    try_files $uri $uri/ /index.html; \
-    } \
-    }' > /etc/nginx/conf.d/default.conf
+
+# Permissions (Just in case)
+RUN chmod -R 755 /usr/share/nginx/html
+
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
