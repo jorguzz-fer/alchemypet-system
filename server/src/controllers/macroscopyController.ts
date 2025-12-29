@@ -5,7 +5,6 @@ export const createMacroscopy = async (req: Request, res: Response) => {
     try {
         const { numero_guia, nome_paciente, ...data } = req.body;
 
-        // Validate required fields
         if (!numero_guia || !nome_paciente) {
             return res.status(400).json({ error: 'Número da guia e Nome do paciente são obrigatórios' });
         }
@@ -105,7 +104,6 @@ export const addJar = async (req: Request, res: Response) => {
             }
         });
 
-        // Update counters
         await prisma.macroscopyRecord.update({
             where: { id: parseInt(id) },
             data: { total_frascos: { increment: 1 } }
@@ -132,10 +130,6 @@ export const addFragment = async (req: Request, res: Response) => {
             }
         });
 
-        // Update counters (Requires finding the parent record first, doing simplified update for now)
-        // In a real app we would traverse up or pass the record ID.
-        // For now, let's rely on the record header update or separate transaction logic if needed strictly.
-        // Actually, schema has counters on MacroscopyRecord. Let's find the parent.
         const jar = await prisma.jar.findUnique({
             where: { id: parseInt(jarId) },
             select: { registro_id: true }
@@ -153,4 +147,74 @@ export const addFragment = async (req: Request, res: Response) => {
         console.error('Error adding fragment:', error);
         res.status(500).json({ error: 'Falha ao adicionar fragmento' });
     }
-}
+};
+
+// Update Macroscopy (Header and/or Nested data)
+export const updateMacroscopy = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { jars, ...data } = req.body;
+
+        // Update Main Record
+        const record = await prisma.macroscopyRecord.update({
+            where: { id: parseInt(id) },
+            data: { ...data }
+        });
+
+        // Simplified Nested Update Logic:
+        // Ideally, we should check which jars exist and update/create accordingly.
+        // For this specific 'Document Save' interaction, we will iterate and Upsert where possible or Create.
+
+        if (jars && Array.isArray(jars)) {
+            for (const jar of jars) {
+                let jarId = jar.id;
+
+                // If no ID, create Jar
+                if (!jarId) {
+                    const newJar = await prisma.jar.create({
+                        data: {
+                            registro_id: parseInt(id),
+                            numero: jar.numero
+                        }
+                    });
+                    jarId = newJar.id;
+                }
+
+                // Handle Fragments
+                if (jar.fragments) {
+                    for (const fragment of jar.fragments) {
+                        // If no ID, create fragment
+                        if (!fragment.id) {
+                            await prisma.fragment.create({
+                                data: {
+                                    frasco_id: jarId,
+                                    numero: fragment.numero || 0,
+                                    cor: fragment.cor,
+                                    consistencia: fragment.consistencia,
+                                    medidas: fragment.medidas,
+                                    representacao: fragment.representacao
+                                }
+                            });
+                        } else {
+                            // Update fragment (optional, if we want to support editing existing fragments)
+                            await prisma.fragment.update({
+                                where: { id: fragment.id },
+                                data: {
+                                    cor: fragment.cor,
+                                    consistencia: fragment.consistencia,
+                                    medidas: fragment.medidas,
+                                    representacao: fragment.representacao
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        res.json(record);
+    } catch (error) {
+        console.error('Error updating record:', error);
+        res.status(500).json({ error: 'Falha ao atualizar registro' });
+    }
+};

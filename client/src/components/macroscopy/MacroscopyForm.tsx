@@ -42,14 +42,18 @@ const MacroscopyForm = () => {
         setSuccess(false);
 
         try {
-            await api.post('/api/macroscopy', formData);
-            setSuccess(true);
-            setFormData({
-                numero_guia: '',
-                nome_paciente: '',
-                status: 'em_analise',
-                jars: []
-            });
+            if (formData.id) {
+                // Update Existing
+                await api.put(`/api/macroscopy/${formData.id}`, formData);
+                setSuccess(true);
+            } else {
+                // Create New
+                const response = await api.post('/api/macroscopy', formData);
+                // Switch to Edit Mode with returned ID
+                setFormData({ ...formData, id: response.data.id } as any);
+                setSuccess(true);
+            }
+
             setTimeout(() => setSuccess(false), 3000);
         } catch (error) {
             console.error('Error saving macroscopy:', error);

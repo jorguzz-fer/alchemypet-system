@@ -12,6 +12,9 @@ interface FragmentRowProps {
     onRemove: (index: number) => void;
 }
 
+const CORES = ['Pardacenta', 'Branca', 'Amarela', 'Enegrecida', 'Vinhosa', 'Translúcida'];
+const CONSISTENCIAS = ['Firme', 'Elástica', 'Mole', 'Friável', 'Dura', 'Borrachosa'];
+
 const FragmentRow = ({ index, fragment, onChange, onRemove }: FragmentRowProps) => {
     return (
         <div className="grid grid-cols-12 gap-2 items-center mb-2 p-2 bg-gray-50 rounded border border-gray-100">
@@ -20,23 +23,25 @@ const FragmentRow = ({ index, fragment, onChange, onRemove }: FragmentRowProps) 
             </div>
 
             <div className="col-span-2">
-                <input
-                    type="text"
-                    placeholder="Cor"
+                <select
                     className="w-full text-sm border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
                     value={fragment.cor}
                     onChange={(e) => onChange(index, 'cor', e.target.value)}
-                />
+                >
+                    <option value="">Selecione Cor</option>
+                    {CORES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
             </div>
 
             <div className="col-span-3">
-                <input
-                    type="text"
-                    placeholder="Consistência"
+                <select
                     className="w-full text-sm border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
                     value={fragment.consistencia}
                     onChange={(e) => onChange(index, 'consistencia', e.target.value)}
-                />
+                >
+                    <option value="">Selecione Consist.</option>
+                    {CONSISTENCIAS.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
             </div>
 
             <div className="col-span-3">
