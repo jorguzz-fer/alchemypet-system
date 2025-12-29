@@ -204,9 +204,19 @@ export const updateMacroscopy = async (req: Request, res: Response) => {
                 // Handle Fragments
                 if (jar.fragments) {
                     for (const fragment of jar.fragments) {
+                        let fragmentId = fragment.id;
+
+                        // Prepare Cassettes Create Input (for new fragments)
+                        const cassettesCreateInput = fragment.cassettes && Array.isArray(fragment.cassettes) ? {
+                            create: fragment.cassettes.map((cas: any) => ({
+                                codigo: cas.codigo,
+                                numero_sequencial: cas.numero_sequencial || 1
+                            }))
+                        } : undefined;
+
                         // If no ID, create fragment
-                        if (!fragment.id) {
-                            await prisma.fragment.create({
+                        if (!fragmentId) {
+                            const newFrag = await prisma.fragment.create({
                                 data: {
                                     frasco_id: jarId,
                                     numero: fragment.numero || 0,
@@ -214,22 +224,51 @@ export const updateMacroscopy = async (req: Request, res: Response) => {
                                     consistencia: fragment.consistencia ? [fragment.consistencia] : [],
                                     medidas: fragment.medidas,
                                     representacao: fragment.representacao ? [fragment.representacao] : [],
-                                    caracteristicas: [],
-                                    aparencia: [],
-                                    aspecto_nodulo: []
+                                    medidas_nodulo: fragment.medidas_nodulo,
+                                    aspecto_nodulo: fragment.aspecto_nodulo || [],
+                                    aparencia: fragment.aparencia || [],
+                                    caracteristicas: fragment.caracteristicas || [],
+                                    cassettes: cassettesCreateInput
                                 }
                             });
+                            fragmentId = newFrag.id;
                         } else {
-                            // Update fragment (optional)
+                            // Update fragment
                             await prisma.fragment.update({
-                                where: { id: fragment.id },
+                                where: { id: fragmentId },
                                 data: {
-                                    cor: fragment.cor ? [fragment.cor] : [],
-                                    consistencia: fragment.consistencia ? [fragment.consistencia] : [],
+                                    cor: fragment.cor ? (Array.isArray(fragment.cor) ? fragment.cor : [fragment.cor]) : [],
+                                    consistencia: fragment.consistencia ? (Array.isArray(fragment.consistencia) ? fragment.consistencia : [fragment.consistencia]) : [],
                                     medidas: fragment.medidas,
-                                    representacao: fragment.representacao ? [fragment.representacao] : []
+                                    representacao: fragment.representacao ? (Array.isArray(fragment.representacao) ? fragment.representacao : [fragment.representacao]) : [],
+                                    medidas_nodulo: fragment.medidas_nodulo,
+                                    aspecto_nodulo: fragment.aspecto_nodulo || [],
+                                    aparencia: fragment.aparencia || [],
+                                    caracteristicas: fragment.caracteristicas || []
                                 }
                             });
+                        }
+
+                        // Handle Cassettes for Existing/New Fragments (Upsert Logic)
+                        if (fragment.cassettes && Array.isArray(fragment.cassettes)) {
+                            for (const cassette of fragment.cassettes) {
+                                if (cassette.id) {
+                                    // Update existing cassette
+                                    await prisma.cassette.update({
+                                        where: { id: cassette.id },
+                                        data: { codigo: cassette.codigo }
+                                    });
+                                } else if (fragmentId) { // Only create if we have a valid fragment parent ID
+                                    // Create new cassette
+                                    await prisma.cassette.create({
+                                        data: {
+                                            fragmento_id: fragmentId,
+                                            codigo: cassette.codigo,
+                                            numero_sequencial: cassette.numero_sequencial || 1
+                                        }
+                                    });
+                                }
+                            }
                         }
                     }
                 }
