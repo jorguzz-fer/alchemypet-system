@@ -4,7 +4,7 @@ import StatsCard from '../components/dashboard/StatsCard';
 import ModuleCard from '../components/dashboard/ModuleCard';
 import RecentActivity from '../components/dashboard/RecentActivity';
 
-const mockActivity: any[] = [];
+
 
 import api from '../services/api';
 
