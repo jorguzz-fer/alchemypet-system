@@ -16,14 +16,20 @@ export const createMacroscopy = async (req: Request, res: Response) => {
                 fragments: {
                     create: jar.fragments ? jar.fragments.map((frag: any, index: number) => ({
                         numero: frag.numero || (index + 1),
-                        cor: frag.cor ? [frag.cor] : [],
-                        consistencia: frag.consistencia ? [frag.consistencia] : [],
+                        cor: Array.isArray(frag.cor) ? frag.cor : (frag.cor ? [frag.cor] : []),
+                        consistencia: Array.isArray(frag.consistencia) ? frag.consistencia : (frag.consistencia ? [frag.consistencia] : []),
                         medidas: frag.medidas,
-                        representacao: frag.representacao ? [frag.representacao] : [],
+                        representacao: Array.isArray(frag.representacao) ? frag.representacao : (frag.representacao ? [frag.representacao] : []),
                         medidas_nodulo: frag.medidas_nodulo,
-                        aspecto_nodulo: frag.aspecto_nodulo || [],
-                        aparencia: frag.aparencia || [],
-                        caracteristicas: [],
+                        aspecto_nodulo: Array.isArray(frag.aspecto_nodulo) ? frag.aspecto_nodulo : (frag.aspecto_nodulo ? [frag.aspecto_nodulo] : []),
+                        aparencia: Array.isArray(frag.aparencia) ? frag.aparencia : (frag.aparencia ? [frag.aparencia] : []),
+                        caracteristicas: Array.isArray(frag.caracteristicas) ? frag.caracteristicas : (frag.caracteristicas ? [frag.caracteristicas] : []),
+                        cassettes: frag.cassettes && Array.isArray(frag.cassettes) ? {
+                            create: frag.cassettes.map((cas: any) => ({
+                                codigo: cas.codigo,
+                                numero_sequencial: cas.numero_sequencial || 1
+                            }))
+                        } : undefined
                     })) : []
                 }
             }))
@@ -237,14 +243,14 @@ export const updateMacroscopy = async (req: Request, res: Response) => {
                             await prisma.fragment.update({
                                 where: { id: fragmentId },
                                 data: {
-                                    cor: fragment.cor ? (Array.isArray(fragment.cor) ? fragment.cor : [fragment.cor]) : [],
-                                    consistencia: fragment.consistencia ? (Array.isArray(fragment.consistencia) ? fragment.consistencia : [fragment.consistencia]) : [],
+                                    cor: Array.isArray(fragment.cor) ? fragment.cor : (fragment.cor ? [fragment.cor] : []),
+                                    consistencia: Array.isArray(fragment.consistencia) ? fragment.consistencia : (fragment.consistencia ? [fragment.consistencia] : []),
                                     medidas: fragment.medidas,
-                                    representacao: fragment.representacao ? (Array.isArray(fragment.representacao) ? fragment.representacao : [fragment.representacao]) : [],
+                                    representacao: Array.isArray(fragment.representacao) ? fragment.representacao : (fragment.representacao ? [fragment.representacao] : []),
                                     medidas_nodulo: fragment.medidas_nodulo,
-                                    aspecto_nodulo: fragment.aspecto_nodulo || [],
-                                    aparencia: fragment.aparencia || [],
-                                    caracteristicas: fragment.caracteristicas || []
+                                    aspecto_nodulo: Array.isArray(fragment.aspecto_nodulo) ? fragment.aspecto_nodulo : (fragment.aspecto_nodulo ? [fragment.aspecto_nodulo] : []),
+                                    aparencia: Array.isArray(fragment.aparencia) ? fragment.aparencia : (fragment.aparencia ? [fragment.aparencia] : []),
+                                    caracteristicas: Array.isArray(fragment.caracteristicas) ? fragment.caracteristicas : (fragment.caracteristicas ? [fragment.caracteristicas] : [])
                                 }
                             });
                         }
