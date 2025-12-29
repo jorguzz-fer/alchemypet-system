@@ -15,14 +15,15 @@ export const createMacroscopy = async (req: Request, res: Response) => {
                 numero: jar.numero,
                 fragments: {
                     create: jar.fragments ? jar.fragments.map((frag: any, index: number) => ({
-                        numero: frag.numero || (index + 1), // Default to index + 1 if missing
-                        cor: frag.cor,
-                        consistencia: frag.consistencia,
+                        numero: frag.numero || (index + 1),
+                        cor: frag.cor ? [frag.cor] : [],
+                        consistencia: frag.consistencia ? [frag.consistencia] : [],
                         medidas: frag.medidas,
-                        representacao: frag.representacao,
+                        representacao: frag.representacao ? [frag.representacao] : [],
                         medidas_nodulo: frag.medidas_nodulo,
-                        aspecto_nodulo: frag.aspecto_nodulo,
-                        aparencia: frag.aparencia,
+                        aspecto_nodulo: frag.aspecto_nodulo || [],
+                        aparencia: frag.aparencia || [],
+                        caracteristicas: [], // Default empty as it's required by schema but not in form
                     })) : []
                 }
             }))
