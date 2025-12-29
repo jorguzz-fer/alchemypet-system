@@ -70,7 +70,8 @@ export const getRecentActivity = async (req: Request, res: Response) => {
                 nome_paciente: true,
                 status: true,
                 created_at: true,
-                total_frascos: true // Or count relations
+                total_frascos: true,
+                total_fragmentos: true
             }
         });
 
