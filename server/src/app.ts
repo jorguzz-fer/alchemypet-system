@@ -20,9 +20,10 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 import dashboardRoutes from './routes/dashboardRoutes';
+import macroscopyRoutes from './routes/macroscopyRoutes';
 
 app.use('/api/dashboard', dashboardRoutes);
-// app.use('/api/macroscopia', macroscopiaRoutes);
+app.use('/api/macroscopy', macroscopyRoutes);
 // app.use('/api/mamaria', mamariaRoutes);
 
 // Error Handling Middleware

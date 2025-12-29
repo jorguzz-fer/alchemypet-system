@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import DashboardLayout from './layouts/DashboardLayout';
 import Dashboard from './pages/Dashboard';
+import Macroscopy from './pages/Macroscopy';
 
 function App() {
   return (
@@ -9,7 +10,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/macroscopia" element={<div>Macroscopia Placeholder</div>} />
+          <Route path="/macroscopia" element={<Macroscopy />} />
           <Route path="/mamaria" element={<div>Mamaria Placeholder</div>} />
           <Route path="*" element={<div>Not Found</div>} />
         </Routes>
