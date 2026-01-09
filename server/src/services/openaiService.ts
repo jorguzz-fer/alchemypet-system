@@ -56,17 +56,7 @@ export const categorizeInput = async (input: string): Promise<{ category: string
   }
 };
 
-// Parallel execution for all jars
-console.log(`Generating reports for ${jars.length} jars...`);
 
-const reports = await Promise.all(jars.map((jar: any) => generateForJar(patientInfo, jar)));
-
-return reports;
-  } catch (error) {
-  console.error("Error generating analysis:", error);
-  throw error;
-}
-};
 
 // Helper to generate for a single jar
 const generateForJar = async (patientInfo: any, jar: any): Promise<any> => {
@@ -138,6 +128,7 @@ export const generateMacroscopyAnalysis = async (record: any): Promise<any> => {
     if (jars.length === 0) return [];
 
     // Parallel execution for all jars
+    console.log(`Generating reports for ${jars.length} jars...`);
     const reports = await Promise.all(jars.map((jar: any) => generateForJar(patientInfo, jar)));
 
     return reports;
