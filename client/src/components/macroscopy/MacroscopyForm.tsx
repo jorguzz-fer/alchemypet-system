@@ -12,7 +12,7 @@ interface FormData {
 }
 
 interface MacroscopyFormProps {
-    onSaveSuccess?: () => void;
+    onSaveSuccess?: (record?: any) => void;
 }
 
 const MacroscopyForm = ({ onSaveSuccess }: MacroscopyFormProps) => {
@@ -66,19 +66,22 @@ const MacroscopyForm = ({ onSaveSuccess }: MacroscopyFormProps) => {
         setSuccess(false);
 
         try {
+            let savedRecord;
             if (formData.id) {
                 // Update Existing
-                await api.put(`/api/macroscopy/${formData.id}`, formData);
+                const response = await api.put(`/api/macroscopy/${formData.id}`, formData);
+                savedRecord = response.data;
                 setSuccess(true);
             } else {
                 // Create New
                 const response = await api.post('/api/macroscopy', formData);
+                savedRecord = response.data;
                 // Switch to Edit Mode with returned ID
-                setFormData({ ...formData, id: response.data.id } as any);
+                setFormData({ ...formData, id: savedRecord.id } as any);
                 setSuccess(true);
             }
 
-            if (onSaveSuccess) onSaveSuccess();
+            if (onSaveSuccess) onSaveSuccess(savedRecord);
 
             setTimeout(() => setSuccess(false), 3000);
         } catch (error: any) {

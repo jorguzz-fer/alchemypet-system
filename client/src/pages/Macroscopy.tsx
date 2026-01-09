@@ -7,8 +7,11 @@ const Macroscopy = () => {
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [selectedReportExam, setSelectedReportExam] = useState<any | null>(null);
 
-    const handleSaveSuccess = () => {
+    const handleSaveSuccess = (record?: any) => {
         setRefreshTrigger(prev => prev + 1);
+        if (record) {
+            setSelectedReportExam(record);
+        }
     };
 
     return (

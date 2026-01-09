@@ -109,7 +109,7 @@ const RecentActivities = ({ refreshTrigger, onOpenReport }: RecentActivitiesProp
                                     </td>
                                     <td className="px-4 py-3">
                                         <span className={`px-2 py-1 rounded text-xs font-medium 
-                                            ${item.status === 'concluido' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                            ${['concluido', 'Assinado', 'assinado'].includes(item.status) ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                                             {item.status === 'em_analise' ? 'Em Análise' : item.status}
                                         </span>
                                     </td>

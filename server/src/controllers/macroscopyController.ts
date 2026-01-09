@@ -238,9 +238,10 @@ export const updateMacroscopy = async (req: Request, res: Response) => {
         // Sanitize payload: remove id, created_at, updated_at, and jars (already extracted)
         const { id: _id, created_at, updated_at, ...updateData } = data;
 
-        // If signing, update status to 'concluido' (optional logic, but common)
-        if (updateData.is_signed === true && updateData.status !== 'concluido') {
-            // updateData.status = 'concluido'; // Users often prefer manual status control, let's keep it manual or specific if requested.
+        // If signing, update status to 'Assinado'
+        if (updateData.is_signed === true) {
+            updateData.status = 'Assinado';
+            updateData.signed_at = new Date();
         }
 
         // Update Main Record

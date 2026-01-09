@@ -12,6 +12,12 @@ const MacroscopyReportModal = ({ record, onClose }: MacroscopyReportModalProps) 
     const report = generateMacroscopyReport(record);
 
     const handleCopy = () => {
+        // Construct copy text with grouped cassettes
+        const cassetteText = report.jarsWithCassettes?.map((j: any) => `
+FRASCO ${j.jarNumero}:
+${j.cassettes.map((c: any) => `${c.codigo}: ${c.text}`).join('\n')}
+`).join('\n') || '';
+
         const fullText = `
 **Guia: ${record.numero_guia}**
 **Paciente: ${record.nome_paciente}**
@@ -20,10 +26,7 @@ RECEBIMENTO
 ${report.receiptText}
 
 IDENTIFICAÇÃO E DESCRIÇÃO MACROSCÓPICA
-${report.cassetteList.map(c => `
-${c.codigo}
-${c.text}
-`).join('')}
+${cassetteText}
 
 RESUMO
 Material processado: ${report.summary.fragments} fragmentos em ${report.summary.cassettes} cassetes
@@ -36,61 +39,71 @@ Total de frascos: ${report.summary.jars}
 
     // State
     const [aiReports, setAiReports] = useState<any[]>([]);
-    const [loadingAi, setLoadingAi] = useState(false);
-    const [saving, setSaving] = useState(false); // For Save button
+    const [loadingAiIndex, setLoadingAiIndex] = useState<number | null>(null);
+    const [saving, setSaving] = useState(false);
 
     // Signature State
     const [signedBy, setSignedBy] = useState(record.signed_by || '');
     const [isSigned, setIsSigned] = useState(record.is_signed || false);
     const [isValidated, setIsValidated] = useState(record.is_validated || false);
 
-    // Initialize AI Reports from record if they exist (persistence)
+    // Initialize AI Reports
     useEffect(() => {
         if (record && record.jars) {
             const mappedReports = record.jars.map((jar: any) => ({
                 jar_id: jar.id,
                 jar_numero: jar.numero,
+                // Only pre-fill if data exists
                 natureza: jar.natureza || '',
                 macroscopia: jar.macroscopia || '',
-                coloracao: jar.coloracao || '',
+                coloracao: jar.coloracao || '', // Empty by default as requested
                 microscopia: jar.microscopia || '',
                 diagnostico: jar.diagnostico || '',
                 observacao: jar.observacao || '',
-                nota: jar.nota || ''
+                nota: jar.nota || '',
+                // Flag to control accordion
+                generated: !!(jar.macroscopia || jar.microscopia || jar.diagnostico)
             }));
             setAiReports(mappedReports);
         }
     }, [record]);
 
-    const handleGenerateAi = async () => {
-        setLoadingAi(true);
+    const handleGenerateSingle = async (index: number) => {
+        setLoadingAiIndex(index);
         try {
-            const response = await api.post('/api/ai/generate-report', record);
-            const generated = response.data.reports || [];
+            // Filter record to only include the target jar for generation
+            const targetJar = record.jars.find((j: any) => String(j.numero) === String(aiReports[index].jar_numero));
 
-            // Merge generated data with existing structure (preserve IDs)
-            let merged = [...aiReports];
-            if (merged.length === 0 && record.jars) {
-                // First time, map structure
-                merged = record.jars.map((j: any) => ({ jar_id: j.id, jar_numero: j.numero }));
+            if (!targetJar) {
+                alert("Erro ao localizar dados do frasco.");
+                return;
             }
 
-            // Update matched jars
-            generated.forEach((gen: any) => {
-                const index = merged.findIndex(m => String(m.jar_numero) === String(gen.jar_numero));
-                if (index >= 0) {
-                    merged[index] = { ...merged[index], ...gen };
-                } else {
-                    merged.push(gen); // Should not happen if data consistent
-                }
-            });
+            const payload = {
+                ...record,
+                jars: [targetJar]
+            };
 
-            setAiReports(merged);
+            const response = await api.post('/api/ai/generate-report', payload);
+            const generatedReports = response.data.reports || [];
+
+            // Should be only one report
+            if (generatedReports.length > 0) {
+                const gen = generatedReports[0];
+                const newReports = [...aiReports];
+                newReports[index] = {
+                    ...newReports[index],
+                    ...gen,
+                    generated: true
+                };
+                setAiReports(newReports);
+            }
+
         } catch (error) {
             console.error("Erro ao gerar relatório IA:", error);
             alert("Erro ao gerar relatório com IA.");
         } finally {
-            setLoadingAi(false);
+            setLoadingAiIndex(null);
         }
     };
 
@@ -104,8 +117,8 @@ Total de frascos: ${report.summary.jars}
                 signed_by: signedBy,
                 signed_at: signed ? new Date().toISOString() : null, // Backend can handle date too
                 jars: aiReports.map(report => ({
-                    id: report.jar_id, // Important for update
-                    numero: report.jar_numero, // needed if creating new (fallback)
+                    id: report.jar_id,
+                    numero: report.jar_numero,
                     natureza: report.natureza,
                     macroscopia: report.macroscopia,
                     coloracao: report.coloracao,
@@ -120,10 +133,8 @@ Total de frascos: ${report.summary.jars}
 
             if (signed) {
                 alert('Análise assinada e salva com sucesso!');
-                onClose(); // Close will trigger refresh in parent if implemented there
-                // But user asked to reset parent. onClose usually just closes modal.
-                // We need to ensure parent re-fetches.
-                window.location.reload(); // Hard refresh to ensure everything is reset as requested "resetar a tela anterior"
+                onClose();
+                window.location.reload();
             } else {
                 alert('Salvo com sucesso!');
             }
@@ -168,7 +179,7 @@ Total de frascos: ${report.summary.jars}
                 {/* Content - Scrollable */}
                 <div className="p-8 overflow-y-auto bg-gray-50 flex-1">
 
-                    {/* Report Sheet Header (Visual only as per request) */}
+                    {/* Report Sheet Header */}
                     <div className="mb-8 border-b-2 border-gray-800 pb-4">
                         <div className="flex justify-between items-end">
                             <div>
@@ -184,7 +195,7 @@ Total de frascos: ${report.summary.jars}
                         </div>
                     </div>
 
-                    {/* Original Description (Always Visible below) */}
+                    {/* Original Description (Grouped by Jar) */}
                     <div className="bg-gray-100 p-6 rounded-lg mb-8 opacity-75 hover:opacity-100 transition-opacity">
                         <h3 className="text-sm font-bold text-gray-700 uppercase mb-4">Dados Originais (Macroscopia)</h3>
                         <div className="space-y-4 text-sm text-gray-600">
@@ -193,104 +204,139 @@ Total de frascos: ${report.summary.jars}
                             </div>
                             <div>
                                 <span className="font-bold">Cassetes:</span>
-                                <ul className="list-disc pl-5 mt-1 space-y-1">
-                                    {report.cassetteList.map((c, i) => (
-                                        <li key={i}><span className="font-semibold">{c.codigo}:</span> {c.text}</li>
+                                <div className="mt-2 space-y-3">
+                                    {report.jarsWithCassettes?.map((jarData: any, i: number) => (
+                                        <div key={i}>
+                                            <p className="font-bold text-gray-700 text-xs uppercase mb-1">Frasco {jarData.jarNumero}:</p>
+                                            <ul className="list-disc pl-5 space-y-1">
+                                                {jarData.cassettes.map((c: any, j: number) => (
+                                                    <li key={j}><span className="font-semibold">{c.codigo}:</span> {c.text}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
                                     ))}
-                                </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     {/* AI Reports Section */}
                     {aiReports.length > 0 && (
-                        <div className="space-y-8 mb-8">
+                        <div className="space-y-4 mb-8">
                             {aiReports.map((aiReport, index) => (
-                                <div key={index} className="bg-white border border-gray-200 p-8 rounded-lg shadow-sm relative">
-                                    <div className="absolute top-0 right-0 bg-purple-100 text-purple-800 px-3 py-1 rounded-bl-lg text-xs font-bold uppercase tracking-wider">
-                                        Frasco {aiReport.jar_numero}
-                                    </div>
-
-                                    <h3 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">Análise - Frasco {aiReport.jar_numero}</h3>
-
-                                    {/* Natureza */}
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-bold text-gray-700 mb-1">Natureza do material:</label>
-                                        <input
-                                            className="w-full text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
-                                            value={aiReport.natureza || ''}
-                                            onChange={(e) => updateReport(index, 'natureza', e.target.value)}
-                                        />
-                                    </div>
-
-                                    {/* Macroscopy */}
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-bold text-gray-700 mb-1">Macroscopia:</label>
-                                        <textarea
-                                            rows={4}
-                                            className="w-full text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
-                                            value={aiReport.macroscopia || ''}
-                                            onChange={(e) => updateReport(index, 'macroscopia', e.target.value)}
-                                        />
-                                    </div>
-
-                                    {/* Coloração */}
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-bold text-gray-700 mb-1">Coloração:</label>
-                                        <input
-                                            className="w-full text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
-                                            value={aiReport.coloracao || ''}
-                                            onChange={(e) => updateReport(index, 'coloracao', e.target.value)}
-                                        />
-                                    </div>
-
-                                    {/* Microscopia */}
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-bold text-gray-700 mb-1">Microscopia:</label>
-                                        <textarea
-                                            rows={6}
-                                            className="w-full text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
-                                            value={aiReport.microscopia || ''}
-                                            onChange={(e) => updateReport(index, 'microscopia', e.target.value)}
-                                        />
-                                    </div>
-
-                                    {/* Diagnóstico */}
-                                    <div className="mb-6">
-                                        <label className="block text-sm font-bold text-gray-700 mb-1">Diagnóstico:</label>
-                                        <textarea
-                                            rows={2}
-                                            className="w-full text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500 font-bold bg-gray-50"
-                                            value={aiReport.diagnostico || ''}
-                                            onChange={(e) => updateReport(index, 'diagnostico', e.target.value)}
-                                        />
-                                    </div>
-
-                                    {/* Notes & Refs */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-500 mb-1">Observação:</label>
-                                            <textarea
-                                                className="w-full text-gray-600 border-gray-300 rounded text-xs"
-                                                rows={2}
-                                                value={aiReport.observacao || ''}
-                                                onChange={(e) => updateReport(index, 'observacao', e.target.value)}
-                                            />
+                                <div key={index} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden transition-all">
+                                    {/* Card Header for Accordion */}
+                                    <div className="flex justify-between items-center bg-gray-50 px-6 py-4 border-b border-gray-100">
+                                        <div className="flex items-center gap-3">
+                                            <div className="bg-purple-100 text-purple-700 px-3 py-1 rounded text-xs font-bold uppercase tracking-wider">
+                                                Frasco {aiReport.jar_numero}
+                                            </div>
+                                            <h3 className="font-bold text-gray-800">
+                                                Análise - Frasco {aiReport.jar_numero}
+                                            </h3>
                                         </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-500 mb-1">Nota:</label>
-                                            <textarea
-                                                className="w-full text-gray-500 border-gray-300 rounded text-xs"
-                                                rows={2}
-                                                value={aiReport.nota || ''}
-                                                onChange={(e) => updateReport(index, 'nota', e.target.value)}
-                                            />
-                                        </div>
+
+                                        {!aiReport.generated && (
+                                            <button
+                                                onClick={() => handleGenerateSingle(index)}
+                                                disabled={loadingAiIndex === index}
+                                                className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50"
+                                            >
+                                                {loadingAiIndex === index ? 'Gerando...' : 'Gerar Análise'}
+                                            </button>
+                                        )}
                                     </div>
+
+                                    {/* Action Button if Not Generated (as generic CTA in body too) */}
+                                    {!aiReport.generated && loadingAiIndex !== index && (
+                                        <div className="p-8 flex justify-center bg-white">
+                                            <p className="text-gray-400 text-sm italic mr-4">Nenhuma análise gerada ainda.</p>
+                                        </div>
+                                    )}
+
+                                    {/* Generated Content */}
+                                    {aiReport.generated && (
+                                        <div className="p-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                                            {/* Natureza */}
+                                            <div className="mb-4">
+                                                <label className="block text-sm font-bold text-gray-700 mb-1">Natureza do material:</label>
+                                                <input
+                                                    className="w-full text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                                                    value={aiReport.natureza || ''}
+                                                    onChange={(e) => updateReport(index, 'natureza', e.target.value)}
+                                                />
+                                            </div>
+
+                                            {/* Macroscopia */}
+                                            <div className="mb-4">
+                                                <label className="block text-sm font-bold text-gray-700 mb-1">Macroscopia:</label>
+                                                <textarea
+                                                    rows={4}
+                                                    className="w-full text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                                                    value={aiReport.macroscopia || ''}
+                                                    onChange={(e) => updateReport(index, 'macroscopia', e.target.value)}
+                                                />
+                                            </div>
+
+                                            {/* Coloração */}
+                                            <div className="mb-4">
+                                                <label className="block text-sm font-bold text-gray-700 mb-1">Coloração:</label>
+                                                <input
+                                                    className="w-full text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                                                    value={aiReport.coloracao || ''}
+                                                    onChange={(e) => updateReport(index, 'coloracao', e.target.value)}
+                                                />
+                                            </div>
+
+                                            {/* Microscopia */}
+                                            <div className="mb-4">
+                                                <label className="block text-sm font-bold text-gray-700 mb-1">Microscopia:</label>
+                                                <textarea
+                                                    rows={6}
+                                                    className="w-full text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                                                    value={aiReport.microscopia || ''}
+                                                    onChange={(e) => updateReport(index, 'microscopia', e.target.value)}
+                                                />
+                                            </div>
+
+                                            {/* Diagnóstico */}
+                                            <div className="mb-6">
+                                                <label className="block text-sm font-bold text-gray-700 mb-1">Diagnóstico:</label>
+                                                <textarea
+                                                    rows={2}
+                                                    className="w-full text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500 font-bold bg-gray-50"
+                                                    value={aiReport.diagnostico || ''}
+                                                    onChange={(e) => updateReport(index, 'diagnostico', e.target.value)}
+                                                />
+                                            </div>
+
+                                            {/* Notes & Refs */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-500 mb-1">Observação:</label>
+                                                    <textarea
+                                                        className="w-full text-gray-600 border-gray-300 rounded text-xs"
+                                                        rows={2}
+                                                        value={aiReport.observacao || ''}
+                                                        onChange={(e) => updateReport(index, 'observacao', e.target.value)}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-500 mb-1">Nota:</label>
+                                                    <textarea
+                                                        className="w-full text-gray-500 border-gray-300 rounded text-xs"
+                                                        rows={2}
+                                                        value={aiReport.nota || ''}
+                                                        onChange={(e) => updateReport(index, 'nota', e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
 
-                            {/* Signatures & Validation */}
+                            {/* Signatures & Validation - Only active if at least one report generated? No, always accessible. */}
                             <div className="bg-white border border-gray-200 p-6 rounded-lg shadow-sm">
                                 <h4 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4 border-b pb-2">Validação e Assinatura</h4>
 
@@ -357,17 +403,6 @@ Total de frascos: ${report.summary.jars}
                         </div>
                     )}
 
-
-                    {/* Generate Analysis Button (Bottom) */}
-                    <div className="flex justify-center mb-8 mt-8">
-                        <button
-                            onClick={handleGenerateAi}
-                            disabled={loadingAi}
-                            className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-md text-base font-bold flex items-center gap-2 transition-colors disabled:opacity-50 shadow-md"
-                        >
-                            {loadingAi ? 'Gerando Análise com IA...' : 'Gerar Análise (IA)'}
-                        </button>
-                    </div>
 
                     {/* Share Footer */}
                     <div className="border-t border-gray-200 pt-6 flex justify-between items-center text-gray-500">
