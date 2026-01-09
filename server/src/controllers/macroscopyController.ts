@@ -9,38 +9,58 @@ export const createMacroscopy = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Número da guia e Nome do paciente são obrigatórios' });
         }
 
-        // Prepare Prisma Nested Write
-        const jarsCreateInput = jars && Array.isArray(jars) ? {
-            create: jars.map((jar: any) => ({
-                numero: String(jar.numero), // Ensure String
-                fragments: {
-                    create: jar.fragments ? jar.fragments.map((frag: any, index: number) => ({
-                        numero: frag.numero || (index + 1),
-                        cor: Array.isArray(frag.cor) ? frag.cor : (frag.cor ? [frag.cor] : []),
-                        consistencia: Array.isArray(frag.consistencia) ? frag.consistencia : (frag.consistencia ? [frag.consistencia] : []),
-                        medidas: frag.medidas,
-                        representacao: Array.isArray(frag.representacao) ? frag.representacao : (frag.representacao ? [frag.representacao] : []),
-                        medidas_nodulo: frag.medidas_nodulo,
-                        aspecto_nodulo: Array.isArray(frag.aspecto_nodulo) ? frag.aspecto_nodulo : (frag.aspecto_nodulo ? [frag.aspecto_nodulo] : []),
-                        aparencia: Array.isArray(frag.aparencia) ? frag.aparencia : (frag.aparencia ? [frag.aparencia] : []),
-                        caracteristicas: Array.isArray(frag.caracteristicas) ? frag.caracteristicas : (frag.caracteristicas ? [frag.caracteristicas] : []),
-                        cassettes: frag.cassettes && Array.isArray(frag.cassettes) ? {
-                            create: frag.cassettes.map((cas: any) => ({
-                                codigo: cas.codigo,
-                                numero_sequencial: cas.numero_sequencial || 1
-                            }))
-                        } : undefined
-                    })) : []
-                }
-            }))
-        } : undefined;
+        // Prepare Nested Jars Create Input
+        let jarsCreateInput: any = undefined;
+
+        if (jars && Array.isArray(jars) && jars.length > 0) {
+            jarsCreateInput = {
+                create: jars.map((jar: any) => {
+                    // Prepare Fragments
+                    const fragmentsCreate = jar.fragments && Array.isArray(jar.fragments) ? {
+                        create: jar.fragments.map((frag: any, index: number) => {
+                            // Prepare Cassettes
+                            const cassettesCreate = frag.cassettes && Array.isArray(frag.cassettes) && frag.cassettes.length > 0 ? {
+                                create: frag.cassettes.map((cas: any) => ({
+                                    codigo: cas.codigo,
+                                    numero_sequencial: cas.numero_sequencial || 1
+                                }))
+                            } : undefined;
+
+                            return {
+                                numero: frag.numero || (index + 1),
+                                cor: Array.isArray(frag.cor) ? frag.cor : (frag.cor ? [frag.cor] : []),
+                                consistencia: Array.isArray(frag.consistencia) ? frag.consistencia : (frag.consistencia ? [frag.consistencia] : []),
+                                medidas: frag.medidas,
+                                representacao: Array.isArray(frag.representacao) ? frag.representacao : (frag.representacao ? [frag.representacao] : []),
+                                medidas_nodulo: frag.medidas_nodulo,
+                                aspecto_nodulo: Array.isArray(frag.aspecto_nodulo) ? frag.aspecto_nodulo : (frag.aspecto_nodulo ? [frag.aspecto_nodulo] : []),
+                                aparencia: Array.isArray(frag.aparencia) ? frag.aparencia : (frag.aparencia ? [frag.aparencia] : []),
+                                caracteristicas: Array.isArray(frag.caracteristicas) ? frag.caracteristicas : (frag.caracteristicas ? [frag.caracteristicas] : []),
+                                ...(cassettesCreate ? { cassettes: cassettesCreate } : {})
+                            };
+                        })
+                    } : undefined;
+
+                    return {
+                        numero: String(jar.numero),
+                        ...(fragmentsCreate ? { fragments: fragmentsCreate } : {})
+                    };
+                })
+            };
+        }
+
+        // Clean data and ensure types
+        const cleanData: any = { ...data };
+        if (cleanData.total_frascos) cleanData.total_frascos = parseInt(cleanData.total_frascos);
+        if (cleanData.total_fragmentos) cleanData.total_fragmentos = parseInt(cleanData.total_fragmentos);
+        if (cleanData.total_cassetes) cleanData.total_cassetes = parseInt(cleanData.total_cassetes);
 
         const record = await prisma.macroscopyRecord.create({
             data: {
                 numero_guia,
                 nome_paciente,
-                ...data, // status, etc
-                jars: jarsCreateInput
+                ...cleanData,
+                ...(jarsCreateInput ? { jars: jarsCreateInput } : {})
             },
             include: {
                 jars: {
