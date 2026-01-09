@@ -18,18 +18,34 @@ const OPTIONS = {
     representacao: ['Todo Material', 'Fragmento Representativo', 'Margens', 'Linfonodo']
 };
 
-// Pastel Colors Palette
+// Semantic Colors Map
+const COLOR_MAP: Record<string, string> = {
+    'Branco': 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50',
+    'Bege': 'bg-[#F5F5DC] text-[#5D4037] border-[#E8E8C8] hover:bg-[#F9F9E0]',
+    'Amarelo': 'bg-yellow-300 text-yellow-900 border-yellow-400 hover:bg-yellow-400',
+    'Marrom': 'bg-[#795548] text-white border-[#5D4037] hover:bg-[#6D4C41]',
+    'Preto': 'bg-gray-900 text-white border-black hover:bg-black',
+    'Cinza': 'bg-gray-400 text-white border-gray-500 hover:bg-gray-500',
+    'Vermelho': 'bg-red-500 text-white border-red-600 hover:bg-red-600',
+    'Vinhoso': 'bg-[#880E4F] text-white border-[#6A0B3D] hover:bg-[#6A0B3D]', // Wine
+    'Acastanhado': 'bg-[#A1887F] text-white border-[#8D6E63] hover:bg-[#8D6E63]', // Brownish
+    'Perolado': 'bg-[#F2EBD4] text-[#4E342E] border-[#E4DCC5] hover:bg-[#E4DCC5]', // Pearl
+};
+
+// Pastel Fallback for non-color options
 const PASTEL_COLORS = [
-    'bg-[#FDFD96] text-yellow-800 border-yellow-200 hover:bg-[#FDFD96]/80', // Yellow
-    'bg-[#FFB347] text-orange-800 border-orange-200 hover:bg-[#FFB347]/80', // Peach
-    'bg-[#FFB7B2] text-red-800 border-red-200 hover:bg-[#FFB7B2]/80',       // Pink
-    'bg-[#E0BBE4] text-purple-800 border-purple-200 hover:bg-[#E0BBE4]/80', // Lavender
-    'bg-[#AEC6CF] text-blue-800 border-blue-200 hover:bg-[#AEC6CF]/80',     // Blue
-    'bg-[#77DD77] text-green-800 border-green-200 hover:bg-[#77DD77]/80',   // Green
+    'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100',
+    'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100',
+    'bg-green-50 text-green-700 border-green-200 hover:bg-green-100',
+    'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100',
 ];
 
-// Helper to get deterministic color
+// Helper to get color
 const getOptionColor = (option: string) => {
+    // Check strict map first
+    if (COLOR_MAP[option]) return COLOR_MAP[option];
+
+    // Otherwise deterministic pastel
     let hash = 0;
     for (let i = 0; i < option.length; i++) {
         hash = option.charCodeAt(i) + ((hash << 5) - hash);
