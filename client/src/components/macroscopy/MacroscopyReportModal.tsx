@@ -263,22 +263,15 @@ Total de frascos: ${report.summary.jars}
                     )}
 
 
-                    {/* Original Description (Always Visible below) */}
-                    <div className="bg-gray-100 p-6 rounded-lg mb-8 opacity-75 hover:opacity-100 transition-opacity">
-                        <h3 className="text-sm font-bold text-gray-700 uppercase mb-4">Dados Originais (Macroscopia)</h3>
-                        <div className="space-y-4 text-sm text-gray-600">
-                            <div>
-                                <span className="font-bold">Recebimento:</span> {report.receiptText}
-                            </div>
-                            <div>
-                                <span className="font-bold">Cassetes:</span>
-                                <ul className="list-disc pl-5 mt-1 space-y-1">
-                                    {report.cassetteList.map((c, i) => (
-                                        <li key={i}><span className="font-semibold">{c.codigo}:</span> {c.text}</li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </div>
+                    {/* Generate Analysis Button (Bottom) */}
+                    <div className="flex justify-center mb-8 mt-8">
+                        <button
+                            onClick={handleGenerateAi}
+                            disabled={loadingAi}
+                            className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-md text-base font-bold flex items-center gap-2 transition-colors disabled:opacity-50 shadow-md"
+                        >
+                            {loadingAi ? 'Gerando Análise com IA...' : 'Gerar Análise (IA)'}
+                        </button>
                     </div>
 
                     {/* Share Footer */}
