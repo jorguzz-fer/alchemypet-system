@@ -361,7 +361,29 @@ export const updateMacroscopy = async (req: Request, res: Response) => {
             }
         }
 
-        res.json(record);
+        // Fetch the full record with updated relations to return
+        // This is crucial because prisma.update above (scalar) and the manual loop below don't automatically return the deep structure
+        const finalRecord = await prisma.macroscopyRecord.findUnique({
+            where: { id: parseInt(id) },
+            include: {
+                jars: {
+                    orderBy: { numero: 'asc' }, // Ensure order is preserved 
+                    include: {
+                        fragments: {
+                            orderBy: { numero: 'asc' },
+                            include: {
+                                cassettes: {
+                                    orderBy: { numero_sequencial: 'asc' }
+                                }
+                            }
+                        }
+                    }
+                },
+                images: true
+            }
+        });
+
+        res.json(finalRecord);
     } catch (error: any) {
         console.error('Error updating record:', error);
         res.status(500).json({ error: `Falha ao atualizar registro: ${error.message}` });
