@@ -1,6 +1,14 @@
+import { useState } from 'react';
 import MacroscopyForm from '../components/macroscopy/MacroscopyForm';
+import RecentActivities from '../components/macroscopy/RecentActivities';
 
 const Macroscopy = () => {
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+    const handleSaveSuccess = () => {
+        setRefreshTrigger(prev => prev + 1);
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -10,7 +18,9 @@ const Macroscopy = () => {
                 </div>
             </div>
 
-            <MacroscopyForm />
+            <MacroscopyForm onSaveSuccess={handleSaveSuccess} />
+
+            <RecentActivities refreshTrigger={refreshTrigger} />
         </div>
     );
 };

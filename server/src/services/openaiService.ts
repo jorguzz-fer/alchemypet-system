@@ -56,52 +56,71 @@ export const categorizeInput = async (input: string): Promise<{ category: string
   }
 };
 
-export const generateMacroscopyAnalysis = async (record: any): Promise<string> => {
+// Helper to generate for a single jar
+const generateForJar = async (patientInfo: any, jar: any): Promise<any> => {
+  if (!openai) throw new Error("OpenAI not initialized");
+
+  const prompt = `
+        Atue como um Patologista Veterinário. Crie um laudo completo (Anatomopatológico) para o seguinte material.
+        
+        PACIENTE: ${JSON.stringify(patientInfo)}
+        
+        MATERIAL (FRASCO ${jar.numero}):
+        ${JSON.stringify(jar, null, 2)}
+        
+        Siga ESTRITAMENTE este modelo JSON de saída. Não retorne markdown, apenas JSON.
+        
+        {
+            "jar_numero": "${jar.numero}",
+            "natureza": "[Inferir, ex: Formação cutânea em local não informado]",
+            "macroscopia": "[Texto corrido formal descrevendo as características deste frasco]",
+            "coloracao": "Hematoxilina e eosina",
+            "microscopia": "[Sugestão técnica e plausível baseada na macroscopia]",
+            "diagnostico": "[Sugestão de diagnóstico para este material]",
+            "observacao": "Nada digno de nota.",
+            "nota": "A descrição microscópica da análise histopatológica segue as normas do Descriptive Veterinary Pathology Course...",
+            "referencia": "Tumors in Domestic Animals. Donald J. Meuten. 5 ed, 2017."
+        }
+        `;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+      { role: "system", content: "Você é um especialista em Patologia Veterinária. Retorne apenas JSON válido." },
+      { role: "user", content: prompt }
+    ],
+    temperature: 0.5,
+    response_format: { type: "json_object" }
+  });
+
+  const content = response.choices[0].message.content;
+  return content ? JSON.parse(content) : null;
+};
+
+export const generateMacroscopyAnalysis = async (record: any): Promise<any> => {
   if (!openai) {
-    return "Erro: OpenAI não configurada.";
+    throw new Error("OpenAI não configurada.");
   }
 
   try {
-    const prompt = `
-        Atue como um Patologista Veterinário. Crie um laudo macroscópico e uma SUGESTÃO de microscopia com base nos dados abaixo.
-        
-        DADOS DO EXAME:
-        ${JSON.stringify(record, null, 2)}
-        
-        Siga ESTRITAMENTE este modelo de saída (mantenha os títulos):
+    const patientInfo = {
+      numero_guia: record.numero_guia,
+      nome_paciente: record.nome_paciente,
+      especie: record.especie // if available
+    };
 
-        Natureza do material conforme requisição:
-        [Inferir tipo de tecido/lesão, ex: "Formação cutânea em local não informado" ou basear-se no nome do exame/paciente]
+    const jars = record.jars || [];
 
-        Descrição macroscópica:
-        [Texto corrido formal descrevendo o recebimento. Ex: "Recebido(s) um (01) frasco(s) contendo...". Incluir medidas, cor, consistência, aspecto ao corte. Mencionar cassetes.]
+    // If no jars, maybe try to process whole record? But assumption is jars exist.
+    if (jars.length === 0) return [];
 
-        Coloração:
-        Hematoxilina e eosina
+    // Parallel execution for all jars
+    const reports = await Promise.all(jars.map((jar: any) => generateForJar(patientInfo, jar)));
 
-        Descrição microscópica:
-        [Crie uma descrição microscópica PLAUSÍVEL e TÉCNICA compatível com a macroscopia. Se for um nódulo enegrecido, descreva características de melanoma. Se for cístico, descreva cisto. Use terminologia técnica avançada: "proliferação neoplásica", "células fusiformes", "pleomorfismo", "índice mitótico", etc. Se não for possível inferir, crie uma descrição genérica de "Dermatite" ou "Processo inflamatório".]
-        
-        Diagnóstico:
-        [Sugira um diagnóstico compatível]
-        
-        Nota:
-        [Adicione nota se margens estiverem comprometidas ou se houver observações relevantes]
-        `;
-
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", // Use a better model for text generation
-      messages: [
-        { role: "system", content: "Você é um especialista em Patologia Veterinária." },
-        { role: "user", content: prompt }
-      ],
-      temperature: 0.5,
-    });
-
-    return response.choices[0].message.content || "Erro ao gerar análise.";
+    return reports;
 
   } catch (error) {
     console.error("Error generating analysis:", error);
-    return "Erro ao gerar análise: " + String(error);
+    throw error;
   }
 };

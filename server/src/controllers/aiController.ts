@@ -26,8 +26,8 @@ export const generateReport = async (req: Request, res: Response) => {
             return;
         }
 
-        const report = await generateMacroscopyAnalysis(record);
-        res.json({ report });
+        const reports = await generateMacroscopyAnalysis(record);
+        res.json({ reports });
     } catch (error) {
         console.error("Report Generation Error:", error);
         res.status(500).json({ error: "Internal Server Error" });

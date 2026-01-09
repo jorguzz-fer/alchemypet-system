@@ -11,14 +11,30 @@ interface FormData {
     jars: any[];
 }
 
-const MacroscopyForm = () => {
+interface MacroscopyFormProps {
+    onSaveSuccess?: () => void;
+}
+
+const MacroscopyForm = ({ onSaveSuccess }: MacroscopyFormProps) => {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [formData, setFormData] = useState<FormData>({
         numero_guia: '',
         nome_paciente: '',
         status: 'em_analise',
-        jars: []
+        jars: [{
+            numero: '1',
+            fragments: [{
+                numero: 1,
+                caracteristicas: [],
+                aparencia: [],
+                consistencia: [],
+                aspecto_nodulo: [],
+                cor: [],
+                representacao: [],
+                cassettes: []
+            }]
+        }]
     });
 
     const addJar = () => {
@@ -61,6 +77,8 @@ const MacroscopyForm = () => {
                 setFormData({ ...formData, id: response.data.id } as any);
                 setSuccess(true);
             }
+
+            if (onSaveSuccess) onSaveSuccess();
 
             setTimeout(() => setSuccess(false), 3000);
         } catch (error: any) {

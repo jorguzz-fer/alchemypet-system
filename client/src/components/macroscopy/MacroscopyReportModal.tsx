@@ -1,5 +1,5 @@
-import React from 'react';
-import { Copy, ArrowLeft } from 'lucide-react';
+import { useState } from 'react';
+import { Copy, ArrowLeft, Mail, Share2, Check, FileCheck, CheckCircle2 } from 'lucide-react';
 import { generateMacroscopyReport } from '../../utils/textUtils';
 import api from '../../services/api';
 
@@ -34,14 +34,17 @@ Total de frascos: ${report.summary.jars}
         alert('Relatório copiado para a área de transferência!');
     };
 
-    const [aiReport, setAiReport] = React.useState<string | null>(null);
-    const [loadingAi, setLoadingAi] = React.useState(false);
+    const [aiReports, setAiReports] = useState<any[]>([]);
+    const [loadingAi, setLoadingAi] = useState(false);
+    const [signedBy, setSignedBy] = useState('');
+    const [isSigned, setIsSigned] = useState(false);
+    const [isValidated, setIsValidated] = useState(false);
 
     const handleGenerateAi = async () => {
         setLoadingAi(true);
         try {
             const response = await api.post('/api/ai/generate-report', record);
-            setAiReport(response.data.report);
+            setAiReports(response.data.reports || []); // Handle array
         } catch (error) {
             console.error("Erro ao gerar relatório IA:", error);
             alert("Erro ao gerar relatório com IA.");
@@ -50,12 +53,18 @@ Total de frascos: ${report.summary.jars}
         }
     };
 
+    const updateReport = (index: number, field: string, value: string) => {
+        const newReports = [...aiReports];
+        newReports[index] = { ...newReports[index], [field]: value };
+        setAiReports(newReports);
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[95vh] flex flex-col overflow-hidden">
 
-                {/* Header */}
-                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-white">
+                {/* Header Actions */}
+                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-white sticky top-0 z-10">
                     <h2 className="text-lg font-bold text-gray-800">Análise de Macroscopia</h2>
                     <div className="flex gap-2">
                         <button
@@ -81,63 +90,198 @@ Total de frascos: ${report.summary.jars}
                 </div>
 
                 {/* Content - Scrollable */}
-                <div className="p-6 overflow-y-auto bg-gray-50 flex-1">
+                <div className="p-8 overflow-y-auto bg-gray-50 flex-1">
 
-                    {/* AI Report Section */}
-                    {aiReport && (
-                        <div className="bg-white border-l-4 border-purple-500 p-6 rounded shadow-sm mb-6">
-                            <h3 className="text-purple-800 font-bold uppercase text-sm mb-4 flex items-center gap-2">
-                                ✨ Análise Gerada por IA (Sugestão)
-                            </h3>
-                            <textarea
-                                className="w-full h-96 p-4 border border-gray-300 rounded-md font-mono text-sm focus:ring-purple-500 focus:border-purple-500"
-                                value={aiReport}
-                                onChange={(e) => setAiReport(e.target.value)}
-                            />
-                            <p className="text-xs text-gray-500 mt-2">
-                                * Edite o texto conforme necessário antes de copiar. Esta é uma sugestão baseada nos dados macroscópicos.
-                            </p>
+                    {/* Report Sheet Header (Visual only as per request) */}
+                    <div className="mb-8 border-b-2 border-gray-800 pb-4">
+                        <div className="flex justify-between items-end">
+                            <div>
+                                <h1 className="text-3xl font-serif font-bold text-gray-900">Laudo Anatomopatológico</h1>
+                                <p className="text-sm text-gray-500 mt-1">Serviço de Patologia Veterinária</p>
+                            </div>
+                            <div className="text-right">
+                                <div className="bg-gray-800 text-white px-3 py-1 text-sm font-bold inline-block mb-1">
+                                    GUIA: {record.numero_guia}
+                                </div>
+                                <p className="text-sm font-bold text-gray-700">{record.nome_paciente}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* AI Reports Section */}
+                    {aiReports.length > 0 && (
+                        <div className="space-y-8 mb-8">
+                            {aiReports.map((aiReport, index) => (
+                                <div key={index} className="bg-white border border-gray-200 p-8 rounded-lg shadow-sm relative">
+                                    <div className="absolute top-0 right-0 bg-purple-100 text-purple-800 px-3 py-1 rounded-bl-lg text-xs font-bold uppercase tracking-wider">
+                                        Frasco {aiReport.jar_numero}
+                                    </div>
+
+                                    <h3 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">Análise - Frasco {aiReport.jar_numero}</h3>
+
+                                    {/* Natureza */}
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-bold text-gray-700 mb-1">Natureza do material:</label>
+                                        <input
+                                            className="w-full text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                                            value={aiReport.natureza || ''}
+                                            onChange={(e) => updateReport(index, 'natureza', e.target.value)}
+                                        />
+                                    </div>
+
+                                    {/* Macroscopy */}
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-bold text-gray-700 mb-1">Macroscopia:</label>
+                                        <textarea
+                                            rows={4}
+                                            className="w-full text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                                            value={aiReport.macroscopia || ''}
+                                            onChange={(e) => updateReport(index, 'macroscopia', e.target.value)}
+                                        />
+                                    </div>
+
+                                    {/* Coloração */}
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-bold text-gray-700 mb-1">Coloração:</label>
+                                        <input
+                                            className="w-full text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                                            value={aiReport.coloracao || ''}
+                                            onChange={(e) => updateReport(index, 'coloracao', e.target.value)}
+                                        />
+                                    </div>
+
+                                    {/* Microscopia */}
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-bold text-gray-700 mb-1">Microscopia:</label>
+                                        <textarea
+                                            rows={6}
+                                            className="w-full text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                                            value={aiReport.microscopia || ''}
+                                            onChange={(e) => updateReport(index, 'microscopia', e.target.value)}
+                                        />
+                                    </div>
+
+                                    {/* Diagnóstico */}
+                                    <div className="mb-6">
+                                        <label className="block text-sm font-bold text-gray-700 mb-1">Diagnóstico:</label>
+                                        <textarea
+                                            rows={2}
+                                            className="w-full text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500 font-bold bg-gray-50"
+                                            value={aiReport.diagnostico || ''}
+                                            onChange={(e) => updateReport(index, 'diagnostico', e.target.value)}
+                                        />
+                                    </div>
+
+                                    {/* Notes & Refs */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 mb-1">Observação:</label>
+                                            <textarea
+                                                className="w-full text-gray-600 border-gray-300 rounded text-xs"
+                                                rows={2}
+                                                value={aiReport.observacao || ''}
+                                                onChange={(e) => updateReport(index, 'observacao', e.target.value)}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 mb-1">Nota:</label>
+                                            <textarea
+                                                className="w-full text-gray-500 border-gray-300 rounded text-xs"
+                                                rows={2}
+                                                value={aiReport.nota || ''}
+                                                onChange={(e) => updateReport(index, 'nota', e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+
+                            {/* Signatures & Validation */}
+                            <div className="bg-white border border-gray-200 p-6 rounded-lg shadow-sm">
+                                <h4 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4 border-b pb-2">Validação e Assinatura</h4>
+
+                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                    <div className="flex gap-6">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isValidated ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 bg-white'}`}>
+                                                {isValidated && <Check size={14} />}
+                                            </div>
+                                            <input type="checkbox" className="hidden" checked={isValidated} onChange={() => setIsValidated(!isValidated)} />
+                                            <span className="text-sm font-medium text-gray-700">Validado</span>
+                                        </label>
+
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSigned ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-300 bg-white'}`}>
+                                                {isSigned && <Check size={14} />}
+                                            </div>
+                                            <input type="checkbox" className="hidden" checked={isSigned} onChange={() => setIsSigned(!isSigned)} />
+                                            <span className="text-sm font-medium text-gray-700">Assinado Eletronicamente</span>
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center gap-3 w-full md:w-auto">
+                                        {isSigned && (
+                                            <input
+                                                type="text"
+                                                placeholder="Nome do Profissional"
+                                                className="border-gray-300 rounded text-sm w-full md:w-48 animate-in fade-in"
+                                                value={signedBy}
+                                                onChange={(e) => setSignedBy(e.target.value)}
+                                            />
+                                        )}
+
+                                        <button
+                                            onClick={() => setIsValidated(true)}
+                                            className={`px-4 py-2 rounded text-sm font-medium transition-colors border ${isValidated ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300'}`}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <FileCheck size={16} /> Validar
+                                            </div>
+                                        </button>
+
+                                        <button
+                                            onClick={() => { setIsSigned(true); /* Logic to save sig */ }}
+                                            className={`px-4 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2 ${isSigned ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-800 text-white hover:bg-gray-700'}`}
+                                        >
+                                            <CheckCircle2 size={16} /> Assinar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
 
-                    {/* Identification Block */}
-                    <div className="bg-gray-100 p-4 rounded-md mb-6">
-                        <p className="font-bold text-gray-800 text-lg">**Guia: {record.numero_guia}**</p>
-                        <p className="font-bold text-gray-800 text-lg mt-1">**Paciente: {record.nome_paciente}**</p>
-                    </div>
 
-                    {/* Receipt Block */}
-                    <div className="mb-6">
-                        <h3 className="text-sm font-bold text-gray-700 uppercase mb-2">RECEBIMENTO</h3>
-                        <p className="text-gray-700 text-base">{report.receiptText}</p>
-                    </div>
-
-                    {/* Description Block */}
-                    <div className="mb-6">
-                        <h3 className="text-sm font-bold text-gray-700 uppercase mb-4">IDENTIFICAÇÃO E DESCRIÇÃO MACROSCÓPICA</h3>
-
-                        <div className="space-y-4">
-                            {report.cassetteList.map((item, index) => (
-                                <div key={index} className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-md">
-                                    <h4 className="font-bold text-blue-800 mb-1">{item.codigo}</h4>
-                                    <p className="text-blue-900/80 italic text-sm">{item.text}</p>
-                                </div>
-                            ))}
-                            {report.cassetteList.length === 0 && (
-                                <p className="text-gray-400 italic">Nenhum cassete registrado.</p>
-                            )}
+                    {/* Original Description (Always Visible below) */}
+                    <div className="bg-gray-100 p-6 rounded-lg mb-8 opacity-75 hover:opacity-100 transition-opacity">
+                        <h3 className="text-sm font-bold text-gray-700 uppercase mb-4">Dados Originais (Macroscopia)</h3>
+                        <div className="space-y-4 text-sm text-gray-600">
+                            <div>
+                                <span className="font-bold">Recebimento:</span> {report.receiptText}
+                            </div>
+                            <div>
+                                <span className="font-bold">Cassetes:</span>
+                                <ul className="list-disc pl-5 mt-1 space-y-1">
+                                    {report.cassetteList.map((c, i) => (
+                                        <li key={i}><span className="font-semibold">{c.codigo}:</span> {c.text}</li>
+                                    ))}
+                                </ul>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Summary Footer */}
-                    <div className="bg-green-50 border border-green-200 rounded-md p-4 mt-8">
-                        <h3 className="text-green-800 font-bold uppercase text-sm mb-2">RESUMO</h3>
-                        <p className="text-green-900 font-medium">
-                            Material processado: <span className="font-bold">{report.summary.fragments}</span> fragmentos em <span className="font-bold">{report.summary.cassettes}</span> cassetes
-                        </p>
-                        <p className="text-green-900 font-medium">
-                            Total de frascos: <span className="font-bold">{report.summary.jars}</span>
-                        </p>
+                    {/* Share Footer */}
+                    <div className="border-t border-gray-200 pt-6 flex justify-between items-center text-gray-500">
+                        <span className="text-xs">Alchemypet System - v1.0</span>
+                        <div className="flex items-center gap-4">
+                            <span className="text-xs font-semibold uppercase tracking-wider">Compartilhar:</span>
+                            <button className="p-2 hover:bg-gray-100 rounded-full text-green-600 transition-colors" title="WhatsApp">
+                                <Share2 size={20} />
+                            </button>
+                            <button className="p-2 hover:bg-gray-100 rounded-full text-blue-600 transition-colors" title="E-mail">
+                                <Mail size={20} />
+                            </button>
+                        </div>
                     </div>
 
                 </div>

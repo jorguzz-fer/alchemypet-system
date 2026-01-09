@@ -54,9 +54,8 @@ const MultiSelectGroup = ({ label, options, selected, onChange }: { label: strin
                         disabled={selected.includes(option)}
                         onClick={() => handleSelect(option)}
                         className={`text-xs px-2.5 py-1.5 rounded border transition-colors
-                            ${selected.includes(option)
-                                ? 'bg-gray-100 text-gray-400 border-transparent cursor-default'
-                                : 'bg-white border-gray-200 text-gray-600 hover:border-purple-300 hover:text-purple-600'
+                                ? 'bg-purple-100 text-purple-700 border-transparent cursor-default font-medium'
+                                : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-purple-200 hover:text-purple-600'
                             }`}
                     >
                         {option}
@@ -86,7 +85,7 @@ const FragmentSection = ({ index, fragment, onUpdate, onRemove }: FragmentSectio
 
     return (
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5 relative group">
-            <div className="absolute -left-3 top-5 bg-purple-600 text-white text-xs font-bold px-2 py-1 rounded-r shadow-sm z-10">
+            <div className="absolute -left-3 -top-3 bg-purple-600 text-white text-xs font-bold px-2 py-1 rounded shadow-sm z-10">
                 Fragmento {index + 1}
             </div>
 
@@ -158,7 +157,7 @@ const FragmentSection = ({ index, fragment, onUpdate, onRemove }: FragmentSectio
                         <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Medidas do Nódulo</label>
                         <input
                             type="text"
-                            className="w-full text-sm border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                            className="w-full text-sm border-2 border-gray-200 rounded focus:ring-purple-500 focus:border-purple-500"
                             placeholder="Se houver..."
                             value={safeFragment.medidas_nodulo || ''}
                             onChange={(e) => updateField('medidas_nodulo', e.target.value)}
@@ -176,7 +175,7 @@ const FragmentSection = ({ index, fragment, onUpdate, onRemove }: FragmentSectio
                         <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Observações</label>
                         <textarea
                             rows={3}
-                            className="w-full text-sm border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                            className="w-full text-sm border-2 border-gray-200 rounded focus:ring-purple-500 focus:border-purple-500"
                             placeholder="Detalhes adicionais..."
                             value={safeFragment.observacoes || ''}
                             onChange={(e) => updateField('observacoes', e.target.value)}

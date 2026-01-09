@@ -68,7 +68,31 @@ export const createMacroscopy = async (req: Request, res: Response) => {
 
 export const listMacroscopies = async (req: Request, res: Response) => {
     try {
+        const { search, date } = req.query;
+
+        const where: any = {};
+
+        if (search) {
+            where.OR = [
+                { numero_guia: { contains: String(search) } }, // Remove mode: 'insensitive' for SQLite compatibility if needed, or keep if Postgres
+                { nome_paciente: { contains: String(search) } }
+            ];
+        }
+
+        if (date) {
+            // date string format YYYY-MM-DD
+            const startDate = new Date(String(date));
+            const endDate = new Date(String(date));
+            endDate.setDate(endDate.getDate() + 1);
+
+            where.created_at = {
+                gte: startDate,
+                lt: endDate
+            };
+        }
+
         const records = await prisma.macroscopyRecord.findMany({
+            where,
             orderBy: { created_at: 'desc' },
             take: 50,
             include: {
