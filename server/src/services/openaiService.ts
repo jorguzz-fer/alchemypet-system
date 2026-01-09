@@ -56,30 +56,53 @@ export const categorizeInput = async (input: string): Promise<{ category: string
   }
 };
 
+// Parallel execution for all jars
+console.log(`Generating reports for ${jars.length} jars...`);
+
+const reports = await Promise.all(jars.map((jar: any) => generateForJar(patientInfo, jar)));
+
+return reports;
+  } catch (error) {
+  console.error("Error generating analysis:", error);
+  throw error;
+}
+};
+
 // Helper to generate for a single jar
 const generateForJar = async (patientInfo: any, jar: any): Promise<any> => {
   if (!openai) throw new Error("OpenAI not initialized");
 
+  // Sanitize jar object to avoid sending deep nested relations or unnecessary heavy data if any
+  const jarContext = {
+    numero: jar.numero,
+    fragments: jar.fragments // Assuming fragments contains the relevant descriptions
+  };
+
   const prompt = `
-        Atue como um Patologista Veterinário. Crie um laudo completo (Anatomopatológico) para o seguinte material.
+        Atue como um Patologista Veterinário. Crie um laudo completo (Anatomopatológico) APENAS para o MATERIAL descrito abaixo (Frasco ${jar.numero}).
+        
+        IMPORTANTE: 
+        1. Ignore qualquer informação de outros frascos. Foco total neste frasco.
+        2. Se houver múltiplos fragmentos neste frasco, descreva-os em conjunto na macroscopia/microscopia deste frasco.
+        3. Não mencione "Frasco ${jar.numero}" no texto da Macroscopia, inicie a descrição diretamente.
         
         PACIENTE: ${JSON.stringify(patientInfo)}
         
-        MATERIAL (FRASCO ${jar.numero}):
-        ${JSON.stringify(jar, null, 2)}
+        MATERIAL PARA ANÁLISE (FRASCO ${jar.numero}):
+        ${JSON.stringify(jarContext, null, 2)}
         
         Siga ESTRITAMENTE este modelo JSON de saída. Não retorne markdown, apenas JSON.
         
         {
             "jar_numero": "${jar.numero}",
-            "natureza": "[Inferir, ex: Formação cutânea em local não informado]",
-            "macroscopia": "[Texto corrido formal descrevendo as características deste frasco]",
+            "natureza": "[Inferir, ex: Formação cutânea]",
+            "macroscopia": "[Texto técnico formal descrevendo a macroscopia APENAS deste frasco]",
             "coloracao": "Hematoxilina e eosina",
-            "microscopia": "[Sugestão técnica e plausível baseada na macroscopia]",
-            "diagnostico": "[Sugestão de diagnóstico para este material]",
-            "observacao": "Nada digno de nota.",
-            "nota": "A descrição microscópica da análise histopatológica segue as normas do Descriptive Veterinary Pathology Course...",
-            "referencia": "Tumors in Domestic Animals. Donald J. Meuten. 5 ed, 2017."
+            "microscopia": "[Descrição microscópica técnica para este material]",
+            "diagnostico": "[Diagnóstico conclusivo para este frasco]",
+            "observacao": "...",
+            "nota": "...",
+            "referencia": "..."
         }
         `;
 
