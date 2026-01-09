@@ -143,96 +143,107 @@ const FragmentSection = ({ index, fragment, onUpdate, onRemove }: FragmentSectio
                 <X size={18} />
             </button>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pl-2">
+            {/* Vertical Layout as requested */}
+            <div className="space-y-6 pt-2">
 
-                {/* Left Column: Characteristics & Description */}
-                <div className="lg:col-span-8 space-y-4">
-                    <MultiSelectGroup
-                        label="Características"
-                        options={OPTIONS.caracteristicas}
-                        selected={safeFragment.caracteristicas}
-                        onChange={(v) => updateField('caracteristicas', v)}
+                {/* 1. Características */}
+                <MultiSelectGroup
+                    label="Características"
+                    options={OPTIONS.caracteristicas}
+                    selected={safeFragment.caracteristicas}
+                    onChange={(v) => updateField('caracteristicas', v)}
+                />
+
+                {/* 2. Consistência */}
+                <MultiSelectGroup
+                    label="Consistência"
+                    options={OPTIONS.consistencia}
+                    selected={safeFragment.consistencia}
+                    onChange={(v) => updateField('consistencia', v)}
+                />
+
+                {/* 3. Cor */}
+                <MultiSelectGroup
+                    label="Cor"
+                    options={OPTIONS.cor}
+                    selected={safeFragment.cor}
+                    onChange={(v) => updateField('cor', v)}
+                />
+
+                {/* 4. Aparência (Externo) */}
+                <MultiSelectGroup
+                    label="Aparência (Externo)"
+                    options={OPTIONS.aparencia}
+                    selected={safeFragment.aparencia}
+                    onChange={(v) => updateField('aparencia', v)}
+                />
+
+                {/* 5. Ao Corte (Nódulo) */}
+                <MultiSelectGroup
+                    label="Ao Corte (Nódulo)"
+                    options={OPTIONS.aspecto_nodulo}
+                    selected={safeFragment.aspecto_nodulo}
+                    onChange={(v) => updateField('aspecto_nodulo', v)}
+                />
+
+                {/* 6. Medidas do Fragmento */}
+                <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Medidas do Fragmento</label>
+                    <input
+                        type="text"
+                        className="w-full text-sm border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                        placeholder="Ex: 3,0 x 2,0 x 1,5 cm"
+                        value={safeFragment.medidas || ''}
+                        onChange={(e) => updateField('medidas', e.target.value)}
                     />
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <MultiSelectGroup
-                            label="Consistência"
-                            options={OPTIONS.consistencia}
-                            selected={safeFragment.consistencia}
-                            onChange={(v) => updateField('consistencia', v)}
-                        />
-                        <MultiSelectGroup
-                            label="Cor"
-                            options={OPTIONS.cor}
-                            selected={safeFragment.cor}
-                            onChange={(v) => updateField('cor', v)}
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <MultiSelectGroup
-                            label="Aparência (Externo)"
-                            options={OPTIONS.aparencia}
-                            selected={safeFragment.aparencia}
-                            onChange={(v) => updateField('aparencia', v)}
-                        />
-                        <MultiSelectGroup
-                            label="Ao Corte (Nódulo)"
-                            options={OPTIONS.aspecto_nodulo}
-                            selected={safeFragment.aspecto_nodulo}
-                            onChange={(v) => updateField('aspecto_nodulo', v)}
-                        />
-                    </div>
                 </div>
 
-                {/* Right Column: Measurements & Cassettes */}
-                <div className="lg:col-span-4 space-y-4 bg-gray-50/50 p-4 rounded-lg border border-gray-100">
-                    <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Medidas do Fragmento</label>
-                        <input
-                            type="text"
-                            className="w-full text-sm border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
-                            placeholder="Ex: 3,0 x 2,0 x 1,5 cm"
-                            value={safeFragment.medidas || ''}
-                            onChange={(e) => updateField('medidas', e.target.value)}
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Medidas do Nódulo</label>
-                        <input
-                            type="text"
-                            className="w-full text-sm border-2 border-gray-200 rounded focus:ring-purple-500 focus:border-purple-500"
-                            placeholder="Se houver..."
-                            value={safeFragment.medidas_nodulo || ''}
-                            onChange={(e) => updateField('medidas_nodulo', e.target.value)}
-                        />
-                    </div>
-
-                    <MultiSelectGroup
-                        label="Representação"
-                        options={OPTIONS.representacao}
-                        selected={safeFragment.representacao}
-                        onChange={(v) => updateField('representacao', v)}
+                {/* (Optional/Extra) Medidas do Nódulo - Keeping it as it wasn't explicitly asked to remove, but not in list. 
+                    Wait, "Ao Corte (Nódulo)" was asked. "Medidas do Nódulo" is usually paired. I'll put it after Medidas do Fragmento as a safe bet or omit if strictly following list.
+                    User list: "Medidas do Fragmento", "Representação".
+                    I will keep Medidas do Nódulo separate or remove? The user was specific. 
+                    "Medidas do Fragmento" is item 6. "Representação" is item 7.
+                    I will append Medidas do Nódulo next to Medidas do Fragmento to avoid losing data capability, but logically placed.
+                */}
+                <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Medidas do Nódulo</label>
+                    <input
+                        type="text"
+                        className="w-full text-sm border-2 border-gray-200 rounded focus:ring-purple-500 focus:border-purple-500"
+                        placeholder="Se houver..."
+                        value={safeFragment.medidas_nodulo || ''}
+                        onChange={(e) => updateField('medidas_nodulo', e.target.value)}
                     />
+                </div>
 
-                    <div className="pt-2 border-t border-gray-200">
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Observações</label>
-                        <textarea
-                            rows={3}
-                            className="w-full text-sm border-2 border-gray-200 rounded focus:ring-purple-500 focus:border-purple-500"
-                            placeholder="Detalhes adicionais..."
-                            value={safeFragment.observacoes || ''}
-                            onChange={(e) => updateField('observacoes', e.target.value)}
-                        />
-                    </div>
+                {/* 7. Representação */}
+                <MultiSelectGroup
+                    label="Representação"
+                    options={OPTIONS.representacao}
+                    selected={safeFragment.representacao}
+                    onChange={(v) => updateField('representacao', v)}
+                />
 
-                    {/* Cassettes Component */}
+                {/* 8. Observações */}
+                <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Observações</label>
+                    <textarea
+                        rows={3}
+                        className="w-full text-sm border-2 border-gray-200 rounded focus:ring-purple-500 focus:border-purple-500"
+                        placeholder="Detalhes adicionais..."
+                        value={safeFragment.observacoes || ''}
+                        onChange={(e) => updateField('observacoes', e.target.value)}
+                    />
+                </div>
+
+                {/* 9. Cassetes / Blocos */}
+                <div className="pt-4 border-t border-gray-200">
                     <CassetteList
                         cassettes={safeFragment.cassettes}
                         onUpdate={(v) => updateField('cassettes', v)}
                     />
                 </div>
+
             </div>
         </div>
     );

@@ -92,7 +92,7 @@ const RecentActivities = ({ refreshTrigger, onOpenReport }: RecentActivitiesProp
                             {activities.map((item) => (
                                 <tr key={item.id} className="bg-white border-b hover:bg-gray-50">
                                     <td className="px-4 py-3">
-                                        {new Date(item.created_at).toLocaleDateString('pt-BR')}
+                                        {new Date(item.created_at).toLocaleDateString('pt-BR')} <span className="text-gray-400 text-xs ml-1">{new Date(item.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                                     </td>
                                     <td className="px-4 py-3 font-medium text-gray-900 flex items-center gap-2">
                                         <FileText size={16} className="text-purple-500" />
