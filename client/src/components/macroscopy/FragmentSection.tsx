@@ -54,8 +54,8 @@ const MultiSelectGroup = ({ label, options, selected, onChange }: { label: strin
                         disabled={selected.includes(option)}
                         onClick={() => handleSelect(option)}
                         className={`text-xs px-2.5 py-1.5 rounded border transition-colors
-                                ? 'bg-purple-100 text-purple-700 border-transparent cursor-default font-medium'
-                                : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-purple-200 hover:text-purple-600'
+                                ? 'bg-purple-100 text-purple-700 border-purple-200 shadow-sm font-medium'
+                                : 'bg-gray-100 text-gray-700 border-transparent hover:bg-gray-200'
                             }`}
                     >
                         {option}

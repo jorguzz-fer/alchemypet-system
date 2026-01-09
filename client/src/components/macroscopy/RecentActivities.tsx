@@ -4,9 +4,10 @@ import api from '../../services/api';
 
 interface RecentActivitiesProps {
     refreshTrigger: number;
+    onOpenReport: (exam: any) => void;
 }
 
-const RecentActivities = ({ refreshTrigger }: RecentActivitiesProps) => {
+const RecentActivities = ({ refreshTrigger, onOpenReport }: RecentActivitiesProps) => {
     const [activities, setActivities] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [filters, setFilters] = useState({
@@ -84,6 +85,7 @@ const RecentActivities = ({ refreshTrigger }: RecentActivitiesProps) => {
                                 <th className="px-4 py-3">Paciente</th>
                                 <th className="px-4 py-3">Frascos</th>
                                 <th className="px-4 py-3">Status</th>
+                                <th className="px-4 py-3">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -110,6 +112,14 @@ const RecentActivities = ({ refreshTrigger }: RecentActivitiesProps) => {
                                             ${item.status === 'concluido' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                                             {item.status === 'em_analise' ? 'Em Análise' : item.status}
                                         </span>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <button
+                                            onClick={() => onOpenReport(item)}
+                                            className="text-purple-600 hover:text-purple-800 text-sm font-medium hover:underline"
+                                        >
+                                            Ver Análise
+                                        </button>
                                     </td>
                                 </tr>
                             ))}

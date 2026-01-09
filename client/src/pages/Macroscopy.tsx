@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import MacroscopyForm from '../components/macroscopy/MacroscopyForm';
 import RecentActivities from '../components/macroscopy/RecentActivities';
+import MacroscopyReportModal from '../components/macroscopy/MacroscopyReportModal';
 
 const Macroscopy = () => {
     const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const [selectedReportExam, setSelectedReportExam] = useState<any | null>(null);
 
     const handleSaveSuccess = () => {
         setRefreshTrigger(prev => prev + 1);
@@ -20,7 +22,17 @@ const Macroscopy = () => {
 
             <MacroscopyForm onSaveSuccess={handleSaveSuccess} />
 
-            <RecentActivities refreshTrigger={refreshTrigger} />
+            <RecentActivities
+                refreshTrigger={refreshTrigger}
+                onOpenReport={setSelectedReportExam}
+            />
+
+            {selectedReportExam && (
+                <MacroscopyReportModal
+                    record={selectedReportExam}
+                    onClose={() => setSelectedReportExam(null)}
+                />
+            )}
         </div>
     );
 };

@@ -250,14 +250,14 @@ export const updateMacroscopy = async (req: Request, res: Response) => {
                                 data: {
                                     frasco_id: jarId,
                                     numero: fragment.numero || 0,
-                                    cor: fragment.cor ? [fragment.cor] : [],
-                                    consistencia: fragment.consistencia ? [fragment.consistencia] : [],
+                                    cor: Array.isArray(fragment.cor) ? fragment.cor : (fragment.cor ? [fragment.cor] : []),
+                                    consistencia: Array.isArray(fragment.consistencia) ? fragment.consistencia : (fragment.consistencia ? [fragment.consistencia] : []),
                                     medidas: fragment.medidas,
-                                    representacao: fragment.representacao ? [fragment.representacao] : [],
+                                    representacao: Array.isArray(fragment.representacao) ? fragment.representacao : (fragment.representacao ? [fragment.representacao] : []),
                                     medidas_nodulo: fragment.medidas_nodulo,
-                                    aspecto_nodulo: fragment.aspecto_nodulo || [],
-                                    aparencia: fragment.aparencia || [],
-                                    caracteristicas: fragment.caracteristicas || [],
+                                    aspecto_nodulo: Array.isArray(fragment.aspecto_nodulo) ? fragment.aspecto_nodulo : (fragment.aspecto_nodulo ? [fragment.aspecto_nodulo] : []),
+                                    aparencia: Array.isArray(fragment.aparencia) ? fragment.aparencia : (fragment.aparencia ? [fragment.aparencia] : []),
+                                    caracteristicas: Array.isArray(fragment.caracteristicas) ? fragment.caracteristicas : (fragment.caracteristicas ? [fragment.caracteristicas] : []),
                                     cassettes: cassettesCreateInput
                                 }
                             });
