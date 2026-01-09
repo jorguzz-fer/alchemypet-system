@@ -68,13 +68,6 @@ Total de frascos: ${report.summary.jars}
                     <h2 className="text-lg font-bold text-gray-800">Análise de Macroscopia</h2>
                     <div className="flex gap-2">
                         <button
-                            onClick={handleGenerateAi}
-                            disabled={loadingAi}
-                            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors disabled:opacity-50"
-                        >
-                            {loadingAi ? 'Gerando...' : 'Gerar Análise (IA)'}
-                        </button>
-                        <button
                             onClick={handleCopy}
                             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
                         >
@@ -96,7 +89,7 @@ Total de frascos: ${report.summary.jars}
                     <div className="mb-8 border-b-2 border-gray-800 pb-4">
                         <div className="flex justify-between items-end">
                             <div>
-                                <h1 className="text-3xl font-serif font-bold text-gray-900">Laudo Anatomopatológico</h1>
+                                <h1 className="text-3xl font-bold text-gray-900">Laudo Anatomopatológico</h1>
                                 <p className="text-sm text-gray-500 mt-1">Serviço de Patologia Veterinária</p>
                             </div>
                             <div className="text-right">
@@ -104,6 +97,24 @@ Total de frascos: ${report.summary.jars}
                                     GUIA: {record.numero_guia}
                                 </div>
                                 <p className="text-sm font-bold text-gray-700">{record.nome_paciente}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Original Description (Always Visible below) */}
+                    <div className="bg-gray-100 p-6 rounded-lg mb-8 opacity-75 hover:opacity-100 transition-opacity">
+                        <h3 className="text-sm font-bold text-gray-700 uppercase mb-4">Dados Originais (Macroscopia)</h3>
+                        <div className="space-y-4 text-sm text-gray-600">
+                            <div>
+                                <span className="font-bold">Recebimento:</span> {report.receiptText}
+                            </div>
+                            <div>
+                                <span className="font-bold">Cassetes:</span>
+                                <ul className="list-disc pl-5 mt-1 space-y-1">
+                                    {report.cassetteList.map((c, i) => (
+                                        <li key={i}><span className="font-semibold">{c.codigo}:</span> {c.text}</li>
+                                    ))}
+                                </ul>
                             </div>
                         </div>
                     </div>

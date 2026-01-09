@@ -96,6 +96,15 @@ export const listMacroscopies = async (req: Request, res: Response) => {
             orderBy: { created_at: 'desc' },
             take: 50,
             include: {
+                jars: {
+                    include: {
+                        fragments: {
+                            include: {
+                                cassettes: true
+                            }
+                        }
+                    }
+                },
                 _count: {
                     select: { jars: true, images: true }
                 }
