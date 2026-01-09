@@ -18,6 +18,26 @@ const OPTIONS = {
     representacao: ['Todo Material', 'Fragmento Representativo', 'Margens', 'Linfonodo']
 };
 
+// Pastel Colors Palette
+const PASTEL_COLORS = [
+    'bg-[#FDFD96] text-yellow-800 border-yellow-200 hover:bg-[#FDFD96]/80', // Yellow
+    'bg-[#FFB347] text-orange-800 border-orange-200 hover:bg-[#FFB347]/80', // Peach
+    'bg-[#FFB7B2] text-red-800 border-red-200 hover:bg-[#FFB7B2]/80',       // Pink
+    'bg-[#E0BBE4] text-purple-800 border-purple-200 hover:bg-[#E0BBE4]/80', // Lavender
+    'bg-[#AEC6CF] text-blue-800 border-blue-200 hover:bg-[#AEC6CF]/80',     // Blue
+    'bg-[#77DD77] text-green-800 border-green-200 hover:bg-[#77DD77]/80',   // Green
+];
+
+// Helper to get deterministic color
+const getOptionColor = (option: string) => {
+    let hash = 0;
+    for (let i = 0; i < option.length; i++) {
+        hash = option.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % PASTEL_COLORS.length;
+    return PASTEL_COLORS[index];
+};
+
 const MultiSelectGroup = ({ label, options, selected, onChange }: { label: string, options: string[], selected: string[], onChange: (val: string[]) => void }) => {
     const handleSelect = (option: string) => {
         if (!selected.includes(option)) {
@@ -35,32 +55,41 @@ const MultiSelectGroup = ({ label, options, selected, onChange }: { label: strin
 
             {/* Selected Tags */}
             <div className="flex flex-wrap gap-2 mb-2">
-                {selected.map(item => (
-                    <span key={item} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-purple-50 text-purple-700 text-sm font-medium border border-purple-100">
-                        {item}
-                        <button type="button" onClick={() => handleRemove(item)} className="hover:text-purple-900 focus:outline-none">
-                            <X size={14} />
-                        </button>
-                    </span>
-                ))}
+                {selected.map(item => {
+                    const colorClass = getOptionColor(item);
+                    return (
+                        <span key={item} className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-sm font-medium border shadow-sm ${colorClass}`}>
+                            {item}
+                            <button type="button" onClick={() => handleRemove(item)} className="hover:opacity-75 focus:outline-none">
+                                <X size={14} />
+                            </button>
+                        </span>
+                    );
+                })}
             </div>
 
             {/* Options Buttons */}
             <div className="flex flex-wrap gap-1.5">
-                {options.map(option => (
-                    <button
-                        key={option}
-                        type="button"
-                        disabled={selected.includes(option)}
-                        onClick={() => handleSelect(option)}
-                        className={`text-xs px-2.5 py-1.5 rounded border transition-colors
-                                ? 'bg-purple-100 text-purple-700 border-purple-200 shadow-sm font-medium'
-                                : 'bg-gray-100 text-gray-700 border-transparent hover:bg-gray-200'
-                            }`}
-                    >
-                        {option}
-                    </button>
-                ))}
+                {options.map(option => {
+                    const colorClass = getOptionColor(option);
+                    const isSelected = selected.includes(option);
+
+                    return (
+                        <button
+                            key={option}
+                            type="button"
+                            disabled={isSelected}
+                            onClick={() => handleSelect(option)}
+                            className={`text-xs px-2.5 py-1.5 rounded border transition-all duration-200 font-medium
+                                    ${isSelected
+                                    ? 'opacity-50 cursor-default bg-gray-100 text-gray-400 border-gray-200'
+                                    : `${colorClass} shadow-sm hover:shadow-md transform hover:-translate-y-0.5`
+                                }`}
+                        >
+                            {option}
+                        </button>
+                    );
+                })}
             </div>
         </div>
     );
