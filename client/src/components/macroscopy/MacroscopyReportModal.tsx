@@ -1,5 +1,7 @@
+import React from 'react';
 import { Copy, ArrowLeft } from 'lucide-react';
 import { generateMacroscopyReport } from '../../utils/textUtils';
+import api from '../../services/api';
 
 interface MacroscopyReportModalProps {
     record: any;
@@ -32,6 +34,22 @@ Total de frascos: ${report.summary.jars}
         alert('Relatório copiado para a área de transferência!');
     };
 
+    const [aiReport, setAiReport] = React.useState<string | null>(null);
+    const [loadingAi, setLoadingAi] = React.useState(false);
+
+    const handleGenerateAi = async () => {
+        setLoadingAi(true);
+        try {
+            const response = await api.post('/api/ai/generate-report', record);
+            setAiReport(response.data.report);
+        } catch (error) {
+            console.error("Erro ao gerar relatório IA:", error);
+            alert("Erro ao gerar relatório com IA.");
+        } finally {
+            setLoadingAi(false);
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
@@ -40,6 +58,13 @@ Total de frascos: ${report.summary.jars}
                 <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-white">
                     <h2 className="text-lg font-bold text-gray-800">Análise de Macroscopia</h2>
                     <div className="flex gap-2">
+                        <button
+                            onClick={handleGenerateAi}
+                            disabled={loadingAi}
+                            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors disabled:opacity-50"
+                        >
+                            {loadingAi ? 'Gerando...' : 'Gerar Análise (IA)'}
+                        </button>
                         <button
                             onClick={handleCopy}
                             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
@@ -57,6 +82,23 @@ Total de frascos: ${report.summary.jars}
 
                 {/* Content - Scrollable */}
                 <div className="p-6 overflow-y-auto bg-gray-50 flex-1">
+
+                    {/* AI Report Section */}
+                    {aiReport && (
+                        <div className="bg-white border-l-4 border-purple-500 p-6 rounded shadow-sm mb-6">
+                            <h3 className="text-purple-800 font-bold uppercase text-sm mb-4 flex items-center gap-2">
+                                ✨ Análise Gerada por IA (Sugestão)
+                            </h3>
+                            <textarea
+                                className="w-full h-96 p-4 border border-gray-300 rounded-md font-mono text-sm focus:ring-purple-500 focus:border-purple-500"
+                                value={aiReport}
+                                onChange={(e) => setAiReport(e.target.value)}
+                            />
+                            <p className="text-xs text-gray-500 mt-2">
+                                * Edite o texto conforme necessário antes de copiar. Esta é uma sugestão baseada nos dados macroscópicos.
+                            </p>
+                        </div>
+                    )}
 
                     {/* Identification Block */}
                     <div className="bg-gray-100 p-4 rounded-md mb-6">
