@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Copy, ArrowLeft, Mail, Share2, Check, FileCheck, CheckCircle2 } from 'lucide-react';
 import { generateMacroscopyReport } from '../../utils/textUtils';
 import api from '../../services/api';
@@ -34,22 +34,105 @@ Total de frascos: ${report.summary.jars}
         alert('Relatório copiado para a área de transferência!');
     };
 
+    // State
     const [aiReports, setAiReports] = useState<any[]>([]);
     const [loadingAi, setLoadingAi] = useState(false);
-    const [signedBy, setSignedBy] = useState('');
-    const [isSigned, setIsSigned] = useState(false);
-    const [isValidated, setIsValidated] = useState(false);
+    const [saving, setSaving] = useState(false); // For Save button
+
+    // Signature State
+    const [signedBy, setSignedBy] = useState(record.signed_by || '');
+    const [isSigned, setIsSigned] = useState(record.is_signed || false);
+    const [isValidated, setIsValidated] = useState(record.is_validated || false);
+
+    // Initialize AI Reports from record if they exist (persistence)
+    useEffect(() => {
+        if (record && record.jars) {
+            const mappedReports = record.jars.map((jar: any) => ({
+                jar_id: jar.id,
+                jar_numero: jar.numero,
+                natureza: jar.natureza || '',
+                macroscopia: jar.macroscopia || '',
+                coloracao: jar.coloracao || '',
+                microscopia: jar.microscopia || '',
+                diagnostico: jar.diagnostico || '',
+                observacao: jar.observacao || '',
+                nota: jar.nota || ''
+            }));
+            setAiReports(mappedReports);
+        }
+    }, [record]);
 
     const handleGenerateAi = async () => {
         setLoadingAi(true);
         try {
             const response = await api.post('/api/ai/generate-report', record);
-            setAiReports(response.data.reports || []); // Handle array
+            const generated = response.data.reports || [];
+
+            // Merge generated data with existing structure (preserve IDs)
+            let merged = [...aiReports];
+            if (merged.length === 0 && record.jars) {
+                // First time, map structure
+                merged = record.jars.map((j: any) => ({ jar_id: j.id, jar_numero: j.numero }));
+            }
+
+            // Update matched jars
+            generated.forEach((gen: any) => {
+                const index = merged.findIndex(m => String(m.jar_numero) === String(gen.jar_numero));
+                if (index >= 0) {
+                    merged[index] = { ...merged[index], ...gen };
+                } else {
+                    merged.push(gen); // Should not happen if data consistent
+                }
+            });
+
+            setAiReports(merged);
         } catch (error) {
             console.error("Erro ao gerar relatório IA:", error);
             alert("Erro ao gerar relatório com IA.");
         } finally {
             setLoadingAi(false);
+        }
+    };
+
+    const handleSave = async (signed: boolean = false) => {
+        setSaving(true);
+        try {
+            // Prepare Payload
+            const payload = {
+                is_validated: isValidated,
+                is_signed: signed,
+                signed_by: signedBy,
+                signed_at: signed ? new Date().toISOString() : null, // Backend can handle date too
+                jars: aiReports.map(report => ({
+                    id: report.jar_id, // Important for update
+                    numero: report.jar_numero, // needed if creating new (fallback)
+                    natureza: report.natureza,
+                    macroscopia: report.macroscopia,
+                    coloracao: report.coloracao,
+                    microscopia: report.microscopia,
+                    diagnostico: report.diagnostico,
+                    observacao: report.observacao,
+                    nota: report.nota
+                }))
+            };
+
+            await api.put(`/api/macroscopy/${record.id}`, payload);
+
+            if (signed) {
+                alert('Análise assinada e salva com sucesso!');
+                onClose(); // Close will trigger refresh in parent if implemented there
+                // But user asked to reset parent. onClose usually just closes modal.
+                // We need to ensure parent re-fetches.
+                window.location.reload(); // Hard refresh to ensure everything is reset as requested "resetar a tela anterior"
+            } else {
+                alert('Salvo com sucesso!');
+            }
+
+        } catch (error) {
+            console.error("Erro ao salvar:", error);
+            alert("Erro ao salvar relatório.");
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -242,7 +325,15 @@ Total de frascos: ${report.summary.jars}
                                         )}
 
                                         <button
-                                            onClick={() => setIsValidated(true)}
+                                            onClick={() => handleSave(false)}
+                                            className="px-4 py-2 rounded text-sm font-medium transition-colors border bg-white text-gray-800 hover:bg-gray-50 border-gray-300"
+                                            disabled={saving}
+                                        >
+                                            {saving ? 'Salvando...' : 'Salvar'}
+                                        </button>
+
+                                        <button
+                                            onClick={() => setIsValidated(!isValidated)}
                                             className={`px-4 py-2 rounded text-sm font-medium transition-colors border ${isValidated ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300'}`}
                                         >
                                             <div className="flex items-center gap-2">
@@ -251,10 +342,14 @@ Total de frascos: ${report.summary.jars}
                                         </button>
 
                                         <button
-                                            onClick={() => { setIsSigned(true); /* Logic to save sig */ }}
+                                            onClick={() => {
+                                                setIsSigned(true);
+                                                handleSave(true);
+                                            }}
+                                            disabled={saving}
                                             className={`px-4 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2 ${isSigned ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-800 text-white hover:bg-gray-700'}`}
                                         >
-                                            <CheckCircle2 size={16} /> Assinar
+                                            <CheckCircle2 size={16} /> Assinar e Fechar
                                         </button>
                                     </div>
                                 </div>

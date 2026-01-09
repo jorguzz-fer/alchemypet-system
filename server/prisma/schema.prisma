@@ -18,6 +18,13 @@ model MacroscopyRecord {
   total_frascos   Int       @default(0) @map("total_frascos")
   total_fragmentos Int      @default(0) @map("total_fragmentos")
   total_cassetes  Int       @default(0) @map("total_cassetes")
+  
+  // Signature & Validation
+  is_validated    Boolean   @default(false) @map("is_validated")
+  is_signed       Boolean   @default(false) @map("is_signed")
+  signed_by       String?   @map("signed_by")
+  signed_at       DateTime? @map("signed_at")
+
   created_at      DateTime  @default(now()) @map("created_at")
   updated_at      DateTime  @default(now()) @updatedAt @map("updated_at")
 
@@ -34,6 +41,16 @@ model Jar {
   registro_id     Int
   numero          String
   quantidade_fragmentos Int @default(0) @map("quantidade_fragmentos")
+  
+  // Analysis Fields
+  natureza        String?
+  macroscopia     String?   @db.Text
+  coloracao       String?   @default("Hematoxilina e Eosina")
+  microscopia     String?   @db.Text
+  diagnostico     String?   @db.Text
+  observacao      String?   @db.Text
+  nota            String?   @db.Text
+
   created_at      DateTime  @default(now()) @map("created_at")
 
   record          MacroscopyRecord @relation(fields: [registro_id], references: [id], onDelete: Cascade)

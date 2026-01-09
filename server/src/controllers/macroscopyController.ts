@@ -218,6 +218,11 @@ export const updateMacroscopy = async (req: Request, res: Response) => {
         // Sanitize payload: remove id, created_at, updated_at, and jars (already extracted)
         const { id: _id, created_at, updated_at, ...updateData } = data;
 
+        // If signing, update status to 'concluido' (optional logic, but common)
+        if (updateData.is_signed === true && updateData.status !== 'concluido') {
+            // updateData.status = 'concluido'; // Users often prefer manual status control, let's keep it manual or specific if requested.
+        }
+
         // Update Main Record
         const record = await prisma.macroscopyRecord.update({
             where: { id: parseInt(id) },
@@ -229,15 +234,36 @@ export const updateMacroscopy = async (req: Request, res: Response) => {
             for (const jar of jars) {
                 let jarId = jar.id;
 
-                // If no ID, create Jar
+                // Handle Jar Creation or Update
                 if (!jarId) {
                     const newJar = await prisma.jar.create({
                         data: {
                             registro_id: parseInt(id),
-                            numero: String(jar.numero)
+                            numero: String(jar.numero),
+                            natureza: jar.natureza,
+                            macroscopia: jar.macroscopia,
+                            coloracao: jar.coloracao,
+                            microscopia: jar.microscopia,
+                            diagnostico: jar.diagnostico,
+                            observacao: jar.observacao,
+                            nota: jar.nota
                         }
                     });
                     jarId = newJar.id;
+                } else {
+                    // Update existing Jar analysis fields
+                    await prisma.jar.update({
+                        where: { id: jarId },
+                        data: {
+                            natureza: jar.natureza,
+                            macroscopia: jar.macroscopia,
+                            coloracao: jar.coloracao,
+                            microscopia: jar.microscopia,
+                            diagnostico: jar.diagnostico,
+                            observacao: jar.observacao,
+                            nota: jar.nota
+                        }
+                    });
                 }
 
                 // Handle Fragments
