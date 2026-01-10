@@ -246,8 +246,25 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
             nome_paciente: 'Bolinha',
             idade: '8',
             medico_solicitante: 'Dr. Fernando',
+
+            // New Fields
+            quantidade_frascos: '1',
+            volume: 'Completa',
+            linfonodo: true,
+
             tipo_especime: 'Mastectomia Total Unilateral',
             lateralidade: 'Esquerda',
+
+            medida_completa: '15,0 x 8,0 x 4,0',
+            medida_linfonodo: '1,5 x 1,0 x 0,5',
+            soma_blocos: '5',
+
+            medida_nodulo: '2,5 x 2,0 x 1,5',
+            aparencia_nodulo: ['Elevado/Séssil', 'Ulcerado'],
+            consistencia_nodulo: ['Firme', 'Duro'],
+            aspecto_nodulo: ['Sólido', 'Lobulado'],
+            cor_nodulo: ['Bege', 'Branco'],
+
             localizacao: 'Mamas inguinais e abdominais',
             dimensoes: '15,0 x 8,0 x 4,0',
             peso: '350.5',
@@ -259,10 +276,20 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
             areola: 'Presente, sem alterações visíveis.',
             mamilo: 'Invertido e retraído.',
             tecido_adiposo: 'Amarelo e lobulado, sem sinais de invasão macroscópica.',
+
+            representacao: ['Fragmento', 'Todo Material incluído'],
+
             observacoes: 'Material enviado em formol 10%.',
             jars: [
                 { numero: '1', conteudo: 'Nódulo Principal + Margens', dimensoes: '3,0 x 2,0 x 1,0', fixador: 'Formol 10%' },
                 { numero: '2', conteudo: 'Linfonodo Inguinal', dimensoes: '1,0 x 0,5 x 0,5', fixador: 'Formol 10%' }
+            ],
+            cassettes: [
+                { numero: '1', conteudo: 'Nódulo', fragmentos: '2' },
+                { numero: '2', conteudo: 'Margem Cranial', fragmentos: '1' },
+                { numero: '3', conteudo: 'Margem Caudal', fragmentos: '1' },
+                { numero: '4', conteudo: 'Linfonodo', fragmentos: '1' },
+                { numero: '5', conteudo: 'Pele (Úlcera)', fragmentos: '1' }
             ]
         });
     };
