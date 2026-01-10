@@ -159,6 +159,34 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
     // Common input class for high visibility
     const inputClass = "w-full border-2 border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 px-3 py-2";
 
+    const fillWithMockData = () => {
+        setFormData({
+            ...formData,
+            numero_guia: '12345/24',
+            nome_paciente: 'Bolinha',
+            idade: '8',
+            medico_solicitante: 'Dr. Fernando',
+            tipo_especime: 'Mastectomia Total Unilateral',
+            lateralidade: 'Esquerda',
+            localizacao: 'Mamas inguinais e abdominais',
+            dimensoes: '15,0 x 8,0 x 4,0',
+            peso: '350.5',
+            aspecto_macroscopico: 'Segmento cutâneo com relevo irregular e área ulcerada central de 2,0 cm.',
+            consistencia: 'Firme e elástica',
+            superficie_corte: 'Superfície de corte brancacenta com áreas císticas e focos de hemorragia.',
+            margens: 'Livres macroscopicamente, distando 0,5 cm da lesão.',
+            pele: 'Ulcerada na região central.',
+            areola: 'Presente, sem alterações visíveis.',
+            mamilo: 'Invertido e retraído.',
+            tecido_adiposo: 'Amarelo e lobulado, sem sinais de invasão macroscópica.',
+            observacoes: 'Material enviado em formol 10%.',
+            jars: [
+                { numero: '1', conteudo: 'Nódulo Principal + Margens', dimensoes: '3,0 x 2,0 x 1,0', fixador: 'Formol 10%' },
+                { numero: '2', conteudo: 'Linfonodo Inguinal', dimensoes: '1,0 x 0,5 x 0,5', fixador: 'Formol 10%' }
+            ]
+        });
+    };
+
     return (
         <form onSubmit={handleSubmit} className="space-y-8 pb-32">
 
@@ -478,6 +506,14 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
 
             {/* Footer Actions */}
             <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 md:pl-72 flex items-center justify-end gap-4 z-10 shadow-lg">
+                <button
+                    type="button"
+                    onClick={fillWithMockData}
+                    className="flex items-center gap-2 bg-purple-100 text-purple-700 px-4 py-2.5 rounded-md hover:bg-purple-200 transition-colors font-medium mr-auto"
+                >
+                    <FlaskConical size={18} /> Preencher (Teste)
+                </button>
+
                 {success && (
                     <span className="text-green-600 font-medium animate-pulse">
                         Salvo com sucesso!
