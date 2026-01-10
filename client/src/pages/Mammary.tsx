@@ -94,8 +94,8 @@ const Mammary = () => {
                         <Microscope size={24} />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-800">Sistema de Macroscopia</h1>
-                        <p className="text-sm text-gray-500 font-medium">Análise Histopatológica Mamária</p>
+                        <h1 className="text-2xl font-bold text-gray-800">Macroscopia Mamária</h1>
+                        <p className="text-sm text-gray-500 font-medium">Análise Histopatológica</p>
                     </div>
                 </div>
                 <div className="flex gap-3">
