@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import MammaryForm from '../components/mammary/MammaryForm';
 import RecentActivities from '../components/macroscopy/RecentActivities';
-import api from '../../services/api';
+import api from '../services/api';
 
 const Mammary = () => {
     const [viewMode, setViewMode] = useState<'dashboard' | 'create'>('dashboard');
