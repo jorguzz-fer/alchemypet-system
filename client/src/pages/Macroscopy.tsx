@@ -81,7 +81,7 @@ const Macroscopy = () => {
             <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-100">
                 <div className="flex items-center gap-3">
                     <div className="bg-gradient-to-br from-purple-600 to-blue-600 p-3 rounded-lg text-white shadow-lg">
-                        <Microscope size={24} />
+                        <FlaskConical size={24} />
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold text-gray-800">Macroscopia Geral</h1>

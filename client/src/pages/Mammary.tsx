@@ -6,7 +6,8 @@ import {
     Search,
     Plus,
     LayoutDashboard,
-    Microscope
+    Microscope,
+    Stethoscope
 } from 'lucide-react';
 import MammaryForm from '../components/mammary/MammaryForm';
 import RecentActivities from '../components/macroscopy/RecentActivities';
@@ -91,7 +92,7 @@ const Mammary = () => {
             <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-100">
                 <div className="flex items-center gap-3">
                     <div className="bg-gradient-to-br from-purple-600 to-blue-600 p-3 rounded-lg text-white shadow-lg">
-                        <Microscope size={24} />
+                        <Stethoscope size={24} />
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold text-gray-800">Macroscopia Mamária</h1>
