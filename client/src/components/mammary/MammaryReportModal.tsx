@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Copy, ArrowLeft, Mail, Share2, Check, FileCheck, CheckCircle2, Wand2 } from 'lucide-react';
+import { useState } from 'react';
+import { Copy, ArrowLeft, CheckCircle2, Wand2 } from 'lucide-react';
 import api from '../../services/api';
 
 interface MammaryReportModalProps {
