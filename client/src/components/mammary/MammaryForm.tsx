@@ -223,7 +223,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                 setShowReportModal(true);
             }, 100);
 
-            if (onSaveSuccess) onSaveSuccess(savedRecord);
+            if (onSaveSuccess) onSaveSuccess(); // Don't pass record to avoid switching view immediately
             setTimeout(() => setSuccess(false), 3000);
         } catch (error: any) {
             console.error('Error saving mammary record:', error);
