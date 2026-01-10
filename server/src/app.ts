@@ -21,10 +21,12 @@ app.get('/health', (req: Request, res: Response) => {
 
 import dashboardRoutes from './routes/dashboardRoutes';
 import macroscopyRoutes from './routes/macroscopyRoutes';
+import mammaryRoutes from './routes/mammaryRoutes';
 import aiRoutes from './routes/aiRoutes';
 
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/macroscopy', macroscopyRoutes);
+app.use('/api/mamaria', mammaryRoutes);
 app.use('/api/ai', aiRoutes);
 // app.use('/api/mamaria', mamariaRoutes);
 

@@ -5,9 +5,10 @@ import api from '../../services/api';
 interface RecentActivitiesProps {
     refreshTrigger: number;
     onOpenReport: (exam: any) => void;
+    apiEndpoint?: string;
 }
 
-const RecentActivities = ({ refreshTrigger, onOpenReport }: RecentActivitiesProps) => {
+const RecentActivities = ({ refreshTrigger, onOpenReport, apiEndpoint = '/api/macroscopy' }: RecentActivitiesProps) => {
     const [activities, setActivities] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [filters, setFilters] = useState({
@@ -22,7 +23,7 @@ const RecentActivities = ({ refreshTrigger, onOpenReport }: RecentActivitiesProp
             if (filters.search) params.append('search', filters.search);
             if (filters.date) params.append('date', filters.date);
 
-            const response = await api.get(`/api/macroscopy?${params.toString()}`);
+            const response = await api.get(`${apiEndpoint}?${params.toString()}`);
             setActivities(response.data);
         } catch (error) {
             console.error("Error fetching activities:", error);
