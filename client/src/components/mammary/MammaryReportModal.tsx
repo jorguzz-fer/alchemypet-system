@@ -60,7 +60,7 @@ const MammaryReportModal = ({ record, onClose }: MammaryReportModalProps) => {
                 signed_at: signed ? new Date().toISOString() : null
             };
 
-            await api.put(`/api/mammary/${record.id}`, payload);
+            await api.put(`/api/mamaria/${record.id}`, payload);
 
             if (signed) {
                 alert('Análise assinada e salva com sucesso!');
