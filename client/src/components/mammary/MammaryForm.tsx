@@ -39,6 +39,53 @@ interface MammaryFormProps {
     onSaveSuccess?: (record?: any) => void;
 }
 
+const PASTEL_COLORS = [
+    'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100',
+    'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100',
+    'bg-green-50 text-green-700 border-green-200 hover:bg-green-100',
+    'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100',
+    'bg-pink-50 text-pink-700 border-pink-200 hover:bg-pink-100',
+    'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100',
+];
+
+const getOptionColor = (option: string) => {
+    let hash = 0;
+    for (let i = 0; i < option.length; i++) {
+        hash = option.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % PASTEL_COLORS.length;
+    return PASTEL_COLORS[index];
+};
+
+const SingleSelectGroup = ({ label, options, selected, onChange }: { label: string, options: string[], selected?: string, onChange: (val: string) => void }) => {
+    return (
+        <div className="mb-2">
+            <label className="block text-sm font-medium text-gray-600 mb-2">{label}</label>
+            <div className="flex flex-wrap gap-2">
+                {options.map(option => {
+                    const colorClass = getOptionColor(option);
+                    const isSelected = selected === option;
+
+                    return (
+                        <button
+                            key={option}
+                            type="button"
+                            onClick={() => onChange(option)}
+                            className={`text-sm px-3 py-1.5 rounded-md border-2 transition-all duration-200 font-medium
+                                    ${isSelected
+                                    ? 'bg-gray-800 text-white border-gray-800 shadow-md transform scale-105'
+                                    : `${colorClass} hover:shadow-md hover:-translate-y-0.5 opacity-80 hover:opacity-100`
+                                }`}
+                        >
+                            {option}
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
 const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
@@ -109,6 +156,9 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
         setFormData({ ...formData, [field]: value });
     };
 
+    // Common input class for high visibility
+    const inputClass = "w-full border-2 border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 px-3 py-2";
+
     return (
         <form onSubmit={handleSubmit} className="space-y-8 pb-32">
 
@@ -124,7 +174,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                         <input
                             required
                             type="text"
-                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            className={inputClass}
                             value={formData.numero_guia}
                             onChange={(e) => updateField('numero_guia', e.target.value)}
                             placeholder="Ex: 12345/23"
@@ -135,7 +185,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                         <input
                             required
                             type="text"
-                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            className={inputClass}
                             value={formData.nome_paciente}
                             onChange={(e) => updateField('nome_paciente', e.target.value)}
                             placeholder="Nome completo do animal"
@@ -145,7 +195,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                         <label className="block text-sm font-medium text-gray-600 mb-1">Idade</label>
                         <input
                             type="number"
-                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            className={inputClass}
                             value={formData.idade || ''}
                             onChange={(e) => updateField('idade', e.target.value)}
                             placeholder="Anos"
@@ -155,7 +205,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                         <label className="block text-sm font-medium text-gray-600 mb-1">Data da Coleta</label>
                         <input
                             type="date"
-                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 text-gray-500"
+                            className={`${inputClass} text-gray-600`}
                             value={formData.data_coleta || ''}
                             onChange={(e) => updateField('data_coleta', e.target.value)}
                         />
@@ -164,7 +214,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                         <label className="block text-sm font-medium text-gray-600 mb-1">Médico Solicitante</label>
                         <input
                             type="text"
-                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            className={inputClass}
                             value={formData.medico_solicitante || ''}
                             onChange={(e) => updateField('medico_solicitante', e.target.value)}
                             placeholder="Dr. Veterinário"
@@ -178,45 +228,37 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
             {/* SECTION 1: Specimen Data */}
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 border-l-4 border-l-blue-500">
                 <h4 className="text-lg font-semibold text-gray-800 mb-4">Dados do Espécime</h4>
+
+                <div className="mb-6">
+                    <SingleSelectGroup
+                        label="Tipo de Espécime"
+                        options={[
+                            "Mastectomia Regional",
+                            "Mastectomia Total Unilateral",
+                            "Mastectomia Total Bilateral",
+                            "Nodulectomia",
+                            "Fragmento de Biópsia"
+                        ]}
+                        selected={formData.tipo_especime}
+                        onChange={(val) => updateField('tipo_especime', val)}
+                    />
+                </div>
+
+                <div className="mb-6">
+                    <SingleSelectGroup
+                        label="Lateralidade"
+                        options={['Direita', 'Esquerda', 'Bilateral', 'Não Informado']}
+                        selected={formData.lateralidade}
+                        onChange={(val) => updateField('lateralidade', val)}
+                    />
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Tipo de Espécime</label>
-                        <select
-                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
-                            value={formData.tipo_especime || ''}
-                            onChange={(e) => updateField('tipo_especime', e.target.value)}
-                        >
-                            <option value="">Selecione...</option>
-                            <option value="Mastectomia Regional">Mastectomia Regional</option>
-                            <option value="Mastectomia Total Unilateral">Mastectomia Total Unilateral</option>
-                            <option value="Mastectomia Total Bilateral">Mastectomia Total Bilateral</option>
-                            <option value="Nodulectomia">Nodulectomia</option>
-                            <option value="Fragmento de Biópsia">Fragmento de Biópsia</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Lateralidade</label>
-                        <div className="flex gap-4 mt-2">
-                            {['Direita', 'Esquerda', 'Bilateral', 'Não Informado'].map(opt => (
-                                <label key={opt} className="inline-flex items-center">
-                                    <input
-                                        type="radio"
-                                        className="form-radio text-pink-600"
-                                        name="lateralidade"
-                                        value={opt}
-                                        checked={formData.lateralidade === opt}
-                                        onChange={(e) => updateField('lateralidade', e.target.value)}
-                                    />
-                                    <span className="ml-2 text-sm text-gray-700">{opt}</span>
-                                </label>
-                            ))}
-                        </div>
-                    </div>
                     <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-600 mb-1">Localização</label>
                         <input
                             type="text"
-                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            className={inputClass}
                             value={formData.localizacao || ''}
                             onChange={(e) => updateField('localizacao', e.target.value)}
                             placeholder="Ex: Mamas abdominais craniais e caudais"
@@ -226,7 +268,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                         <label className="block text-sm font-medium text-gray-600 mb-1">Dimensões (cm)</label>
                         <input
                             type="text"
-                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            className={inputClass}
                             value={formData.dimensoes || ''}
                             onChange={(e) => updateField('dimensoes', e.target.value)}
                             placeholder="Ex: 15,0 x 10,0 x 4,0"
@@ -237,7 +279,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                         <input
                             type="number"
                             step="0.01"
-                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            className={inputClass}
                             value={formData.peso || ''}
                             onChange={(e) => updateField('peso', e.target.value)}
                             placeholder="Ex: 450.5"
@@ -254,7 +296,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                         <label className="block text-sm font-medium text-gray-600 mb-1">Aspecto Macroscópico Geral</label>
                         <textarea
                             rows={3}
-                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            className={inputClass}
                             value={formData.aspecto_macroscopico || ''}
                             onChange={(e) => updateField('aspecto_macroscopico', e.target.value)}
                             placeholder="Descreva a forma, cor externa, presença de pele..."
@@ -264,7 +306,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                         <label className="block text-sm font-medium text-gray-600 mb-1">Consistência</label>
                         <input
                             type="text"
-                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            className={inputClass}
                             value={formData.consistencia || ''}
                             onChange={(e) => updateField('consistencia', e.target.value)}
                             placeholder="Ex: Firme, elástica, duro-elástica..."
@@ -274,7 +316,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                         <label className="block text-sm font-medium text-gray-600 mb-1">Ao Corte (Superfície)</label>
                         <textarea
                             rows={3}
-                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            className={inputClass}
                             value={formData.superficie_corte || ''}
                             onChange={(e) => updateField('superficie_corte', e.target.value)}
                             placeholder="Cor, textura, presença de nódulos, cistos, áreas necróticas..."
@@ -284,7 +326,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                         <label className="block text-sm font-medium text-gray-600 mb-1">Margens Cirúrgicas</label>
                         <textarea
                             rows={2}
-                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            className={inputClass}
                             value={formData.margens || ''}
                             onChange={(e) => updateField('margens', e.target.value)}
                             placeholder="Avaliação macroscópica das margens..."
@@ -301,7 +343,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                         <label className="block text-sm font-medium text-gray-600 mb-1">Pele</label>
                         <textarea
                             rows={2}
-                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            className={inputClass}
                             value={formData.pele || ''}
                             onChange={(e) => updateField('pele', e.target.value)}
                             placeholder="Íntegra, ulcerada, retraída, invadida..."
@@ -312,7 +354,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                             <label className="block text-sm font-medium text-gray-600 mb-1">Aréola</label>
                             <input
                                 type="text"
-                                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                                className={inputClass}
                                 value={formData.areola || ''}
                                 onChange={(e) => updateField('areola', e.target.value)}
                                 placeholder="Aspecto..."
@@ -322,7 +364,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                             <label className="block text-sm font-medium text-gray-600 mb-1">Mamilo</label>
                             <input
                                 type="text"
-                                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                                className={inputClass}
                                 value={formData.mamilo || ''}
                                 onChange={(e) => updateField('mamilo', e.target.value)}
                                 placeholder="Proeminente, invertido, séssil..."
@@ -333,7 +375,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                         <label className="block text-sm font-medium text-gray-600 mb-1">Tecido Adiposo Adjacente</label>
                         <textarea
                             rows={2}
-                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            className={inputClass}
                             value={formData.tecido_adiposo || ''}
                             onChange={(e) => updateField('tecido_adiposo', e.target.value)}
                             placeholder="Aspecto, invasão..."
@@ -381,7 +423,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                                             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Conteúdo</label>
                                             <input
                                                 type="text"
-                                                className="w-full text-sm border-gray-300 rounded focus:ring-pink-500 focus:border-pink-500"
+                                                className={inputClass}
                                                 value={jar.conteudo}
                                                 onChange={(e) => updateJar(index, 'conteudo', e.target.value)}
                                                 placeholder="Ex: Nódulo principal, Margem cranial..."
@@ -391,7 +433,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                                             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Dimensões (cm)</label>
                                             <input
                                                 type="text"
-                                                className="w-full text-sm border-gray-300 rounded focus:ring-pink-500 focus:border-pink-500"
+                                                className={inputClass}
                                                 value={jar.dimensoes}
                                                 onChange={(e) => updateJar(index, 'dimensoes', e.target.value)}
                                                 placeholder="Ex: 2,0 x 1,0 x 0,5"
@@ -401,7 +443,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                                             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Fixador</label>
                                             <input
                                                 type="text"
-                                                className="w-full text-sm border-gray-300 rounded focus:ring-pink-500 focus:border-pink-500"
+                                                className={inputClass}
                                                 value={jar.fixador}
                                                 onChange={(e) => updateJar(index, 'fixador', e.target.value)}
                                             />
@@ -415,7 +457,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                     <button
                         type="button"
                         onClick={addJar}
-                        className="flex items-center gap-2 bg-white text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors font-medium text-sm border border-gray-300 w-full justify-center border-dashed"
+                        className="flex items-center gap-2 bg-white text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors font-medium text-sm border-2 border-gray-300 w-full justify-center border-dashed"
                     >
                         <Plus size={18} /> Adicionar Outro Frasco
                     </button>
@@ -427,7 +469,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                 <label className="block text-lg font-semibold text-gray-800 mb-2">Observações Gerais</label>
                 <textarea
                     rows={5}
-                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                    className={inputClass}
                     value={formData.observacoes || ''}
                     onChange={(e) => updateField('observacoes', e.target.value)}
                     placeholder="Informações adicionais relevantes..."
