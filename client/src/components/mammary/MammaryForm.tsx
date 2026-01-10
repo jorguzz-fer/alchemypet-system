@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Plus, Save, Loader2, X, FlaskConical } from 'lucide-react';
+import { Plus, Save, Loader2, X, FlaskConical, Wand2 } from 'lucide-react';
 import api from '../../services/api';
+import CassetteList from '../macroscopy/CassetteList';
+import MammaryReportModal from './MammaryReportModal';
 
 interface MammaryFormData {
     id?: number;
@@ -18,11 +20,42 @@ interface MammaryFormData {
     dimensoes?: string;
     peso?: string;
 
+    // New Fields
+    quantidade_frascos?: string;
+    volume?: string; // Completa, Incompleta...
+    linfonodo?: boolean;
+
+    medida_completa?: string;
+    medida_linfonodo?: string;
+    soma_blocos?: string;
+
+    // Nodule 1
+    medida_nodulo?: string;
+    aparencia_nodulo?: string[];
+    consistencia_nodulo?: string[];
+    aspecto_nodulo?: string[];
+    cor_nodulo?: string[];
+
+    // Cassettes & Representation
+    representacao?: string[];
+    cassettes: any[];
+
     // Description
     aspecto_macroscopico?: string;
     consistencia?: string;
     superficie_corte?: string;
     margens?: string;
+
+    // Analysis
+    microscopia?: string;
+    diagnostico?: string;
+    nota?: string;
+    referencias?: string;
+
+    // Signed
+    is_signed?: boolean;
+    signed_by?: string;
+    is_validated?: boolean;
 
     // Specifics
     pele?: string;
@@ -86,9 +119,47 @@ const SingleSelectGroup = ({ label, options, selected, onChange }: { label: stri
     );
 };
 
+const MultiSelectGroup = ({ label, options, selected = [], onChange }: { label: string, options: string[], selected?: string[], onChange: (val: string[]) => void }) => {
+    const toggleOption = (option: string) => {
+        if (selected.includes(option)) {
+            onChange(selected.filter(item => item !== option));
+        } else {
+            onChange([...selected, option]);
+        }
+    };
+
+    return (
+        <div className="mb-2">
+            <label className="block text-sm font-medium text-gray-600 mb-2">{label}</label>
+            <div className="flex flex-wrap gap-2">
+                {options.map(option => {
+                    const colorClass = getOptionColor(option);
+                    const isSelected = selected.includes(option);
+
+                    return (
+                        <button
+                            key={option}
+                            type="button"
+                            onClick={() => toggleOption(option)}
+                            className={`text-sm px-3 py-1.5 rounded-md border-2 transition-all duration-200 font-medium
+                                    ${isSelected
+                                    ? 'bg-gray-800 text-white border-gray-800 shadow-md transform scale-105'
+                                    : `${colorClass} hover:shadow-md hover:-translate-y-0.5 opacity-80 hover:opacity-100`
+                                }`}
+                        >
+                            {option}
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
 const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
 
     // Helper for today's date in YYYY-MM-DD
     const getToday = () => new Date().toISOString().split('T')[0];
@@ -98,7 +169,13 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
         nome_paciente: '',
         data_coleta: getToday(), // Default to today
         status: 'em_analise',
-        jars: [{ numero: '1', conteudo: '', dimensoes: '', fixador: 'Formol 10%' }]
+        jars: [{ numero: '1', conteudo: '', dimensoes: '', fixador: 'Formol 10%' }],
+        cassettes: [],
+        aparencia_nodulo: [],
+        consistencia_nodulo: [],
+        aspecto_nodulo: [],
+        cor_nodulo: [],
+        representacao: []
     });
 
     const addJar = () => {
@@ -249,13 +326,44 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                         />
                     </div>
                 </div>
+
+                {/* New Exam Data Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-4 border-t border-gray-100">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Quantidade de Frascos</label>
+                        <input
+                            type="number"
+                            className={inputClass}
+                            value={formData.quantidade_frascos || ''}
+                            onChange={(e) => updateField('quantidade_frascos', e.target.value)}
+                            placeholder="Qtd"
+                        />
+                    </div>
+                    <div>
+                        <SingleSelectGroup
+                            label="Volume"
+                            options={['Completa', 'Incompleta', 'Bilateral', 'Bilateral Incompleta']}
+                            selected={formData.volume}
+                            onChange={(val) => updateField('volume', val)}
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            checked={formData.linfonodo || false}
+                            onChange={(e) => updateField('linfonodo', e.target.checked)}
+                            className="w-4 h-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500"
+                        />
+                        <label className="text-sm font-medium text-gray-600">Linfonodo</label>
+                    </div>
+                </div>
             </div>
 
             {/* Vertical Stack Layout */}
 
-            {/* SECTION 1: Specimen Data */}
+            {/* SECTION 1: Specimen Data & Measurements */}
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 border-l-4 border-l-blue-500">
-                <h4 className="text-lg font-semibold text-gray-800 mb-4">Dados do Espécime</h4>
+                <h4 className="text-lg font-semibold text-gray-800 mb-4">Dados do Espécime & Medidas</h4>
 
                 <div className="mb-6">
                     <SingleSelectGroup
@@ -281,6 +389,84 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                     />
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Medida Completa *</label>
+                        <input
+                            type="text"
+                            className={inputClass}
+                            value={formData.medida_completa || ''}
+                            onChange={(e) => updateField('medida_completa', e.target.value)}
+                            placeholder="00x00x00 cm"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Medida do Linfonodo</label>
+                        <input
+                            type="text"
+                            className={inputClass}
+                            value={formData.medida_linfonodo || ''}
+                            onChange={(e) => updateField('medida_linfonodo', e.target.value)}
+                            placeholder="00x00x00 cm"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Quantidade de Blocos *</label>
+                        <input
+                            type="number"
+                            className={inputClass}
+                            value={formData.soma_blocos || ''}
+                            onChange={(e) => updateField('soma_blocos', e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Medida - Nódulo em Mama 1 *</label>
+                        <input
+                            type="text"
+                            className={inputClass}
+                            value={formData.medida_nodulo || ''}
+                            onChange={(e) => updateField('medida_nodulo', e.target.value)}
+                            placeholder="00x00x00"
+                        />
+                    </div>
+                </div>
+
+                {/* Nodule Attributes */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-6">
+                    <div>
+                        <MultiSelectGroup
+                            label="Aparência do Nódulo 1"
+                            options={['Irregular', 'Alopécico', 'Elevado/Séssil', 'Ulcerado', 'Não Ulcerado', 'Verrucoso']}
+                            selected={formData.aparencia_nodulo}
+                            onChange={(val) => updateField('aparencia_nodulo', val)}
+                        />
+                    </div>
+                    <div>
+                        <MultiSelectGroup
+                            label="Consistência 1"
+                            options={['Macio', 'Firme', 'Duro', 'Cístico (Fluído)', 'Untuoso', 'Fibroelástico']}
+                            selected={formData.consistencia_nodulo}
+                            onChange={(val) => updateField('consistencia_nodulo', val)}
+                        />
+                    </div>
+                    <div>
+                        <MultiSelectGroup
+                            label="Aspecto do Nódulo 1"
+                            options={['Cístico (Fluído)', 'Sólido', 'Lobulado', 'Friável', 'Cavitário']}
+                            selected={formData.aspecto_nodulo}
+                            onChange={(val) => updateField('aspecto_nodulo', val)}
+                        />
+                    </div>
+                    <div>
+                        <MultiSelectGroup
+                            label="Cor 1"
+                            options={['Branco', 'Bege', 'Marrom', 'Preto']}
+                            selected={formData.cor_nodulo}
+                            onChange={(val) => updateField('cor_nodulo', val)}
+                        />
+                    </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-600 mb-1">Localização</label>
@@ -293,7 +479,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Dimensões (cm)</label>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Dimensões (cm) (Legacy)</label>
                         <input
                             type="text"
                             className={inputClass}
@@ -313,6 +499,48 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                             placeholder="Ex: 450.5"
                         />
                     </div>
+                </div>
+
+                {/* Representation & Cassettes */}
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                    <label className="block text-lg font-semibold text-gray-800 mb-3">Representação</label>
+                    <div className="flex gap-4 mb-4">
+                        <label className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                checked={formData.representacao?.includes('Fragmento') || false}
+                                onChange={(e) => {
+                                    const val = 'Fragmento';
+                                    const current = formData.representacao || [];
+                                    updateField('representacao', e.target.checked
+                                        ? [...current, val]
+                                        : current.filter(i => i !== val));
+                                }}
+                                className="w-4 h-4 text-purple-600 rounded border-gray-300"
+                            />
+                            <span className="text-gray-700">Fragmento</span>
+                        </label>
+                        <label className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                checked={formData.representacao?.includes('Todo Material incluído') || false}
+                                onChange={(e) => {
+                                    const val = 'Todo Material incluído';
+                                    const current = formData.representacao || [];
+                                    updateField('representacao', e.target.checked
+                                        ? [...current, val]
+                                        : current.filter(i => i !== val));
+                                }}
+                                className="w-4 h-4 text-purple-600 rounded border-gray-300"
+                            />
+                            <span className="text-gray-700">Todo Material incluído</span>
+                        </label>
+                    </div>
+
+                    <CassetteList
+                        cassettes={formData.cassettes || []}
+                        onUpdate={(val) => updateField('cassettes', val)}
+                    />
                 </div>
             </div>
 
@@ -508,8 +736,17 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
             <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 md:pl-72 flex items-center justify-end gap-4 z-10 shadow-lg">
                 <button
                     type="button"
+                    onClick={() => setShowReportModal(true)}
+                    disabled={!formData.id}
+                    className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2.5 rounded-md hover:bg-purple-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-md mr-auto"
+                >
+                    <Wand2 size={18} /> Gerar Análise (IA)
+                </button>
+
+                <button
+                    type="button"
                     onClick={fillWithMockData}
-                    className="flex items-center gap-2 bg-purple-100 text-purple-700 px-4 py-2.5 rounded-md hover:bg-purple-200 transition-colors font-medium mr-auto"
+                    className="flex items-center gap-2 bg-purple-100 text-purple-700 px-4 py-2.5 rounded-md hover:bg-purple-200 transition-colors font-medium"
                 >
                     <FlaskConical size={18} /> Preencher (Teste)
                 </button>
@@ -529,6 +766,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                 </button>
             </div>
 
+            {showReportModal && <MammaryReportModal record={formData} onClose={() => setShowReportModal(false)} />}
         </form>
     );
 };

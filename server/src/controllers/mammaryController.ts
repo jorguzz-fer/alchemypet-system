@@ -4,7 +4,7 @@ import prisma from '../prisma/client';
 // Create Mammary Record
 export const createMammary = async (req: Request, res: Response) => {
     try {
-        const { numero_guia, nome_paciente, jars, ...data } = req.body;
+        const { numero_guia, nome_paciente, jars, cassettes, ...data } = req.body;
 
         if (!numero_guia || !nome_paciente) {
             return res.status(400).json({ error: 'Número da guia e Nome do paciente são obrigatórios' });
@@ -23,10 +23,23 @@ export const createMammary = async (req: Request, res: Response) => {
             };
         }
 
+        // Prepare nested Cassettes creation
+        let cassettesCreateInput = undefined;
+        if (cassettes && Array.isArray(cassettes) && cassettes.length > 0) {
+            cassettesCreateInput = {
+                create: cassettes.map((cassette: any) => ({
+                    codigo: String(cassette.codigo),
+                    numero_sequencial: parseInt(cassette.numero_sequencial) || 0
+                }))
+            };
+        }
+
         // Clean numeric/decimal fields
         const cleanData: any = { ...data };
         if (cleanData.peso) cleanData.peso = parseFloat(cleanData.peso);
         if (cleanData.idade) cleanData.idade = parseInt(cleanData.idade);
+        if (cleanData.quantidade_frascos) cleanData.quantidade_frascos = parseInt(cleanData.quantidade_frascos);
+        if (cleanData.soma_blocos) cleanData.soma_blocos = parseInt(cleanData.soma_blocos);
         if (cleanData.data_coleta) cleanData.data_coleta = new Date(cleanData.data_coleta);
 
         const record = await prisma.mammaryRecord.create({
@@ -34,11 +47,13 @@ export const createMammary = async (req: Request, res: Response) => {
                 numero_guia,
                 nome_paciente,
                 ...cleanData,
-                ...(jarsCreateInput ? { jars: jarsCreateInput } : {})
+                ...(jarsCreateInput ? { jars: jarsCreateInput } : {}),
+                ...(cassettesCreateInput ? { cassettes: cassettesCreateInput } : {})
             },
             include: {
                 jars: true,
-                images: true
+                images: true,
+                cassettes: true
             }
         });
 
@@ -103,7 +118,10 @@ export const getMammaryById = async (req: Request, res: Response) => {
                 jars: {
                     orderBy: { numero: 'asc' }
                 },
-                images: true
+                images: true,
+                cassettes: {
+                    orderBy: { numero_sequencial: 'asc' }
+                }
             }
         });
 
@@ -122,12 +140,14 @@ export const getMammaryById = async (req: Request, res: Response) => {
 export const updateMammary = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { jars, ...data } = req.body;
+        const { jars, cassettes, ...data } = req.body;
 
         // Sanitize
         const { id: _id, created_at, updated_at, ...updateData } = data;
         if (updateData.peso) updateData.peso = parseFloat(updateData.peso);
         if (updateData.idade) updateData.idade = parseInt(updateData.idade);
+        if (updateData.quantidade_frascos) updateData.quantidade_frascos = parseInt(updateData.quantidade_frascos);
+        if (updateData.soma_blocos) updateData.soma_blocos = parseInt(updateData.soma_blocos);
         if (updateData.data_coleta) updateData.data_coleta = new Date(updateData.data_coleta);
 
         // Update Main Record
@@ -163,12 +183,47 @@ export const updateMammary = async (req: Request, res: Response) => {
             }
         }
 
+        // Handle Nested Cassettes
+        if (cassettes && Array.isArray(cassettes)) {
+            // Get existing IDs to find deletions (optional, but good practice. For now simpler check)
+            // Or just upsert/create based on ID presence
+            const existingCassettes = await prisma.mammaryCassette.findMany({ where: { registro_id: parseInt(id) } });
+            const incomingIds = cassettes.filter((c: any) => c.id).map((c: any) => c.id);
+            const toDelete = existingCassettes.filter(c => !incomingIds.includes(c.id));
+
+            // Delete removed
+            for (const c of toDelete) {
+                await prisma.mammaryCassette.delete({ where: { id: c.id } });
+            }
+
+            for (const cassette of cassettes) {
+                if (cassette.id) {
+                    await prisma.mammaryCassette.update({
+                        where: { id: cassette.id },
+                        data: {
+                            codigo: String(cassette.codigo),
+                            numero_sequencial: parseInt(cassette.numero_sequencial) || 0
+                        }
+                    });
+                } else {
+                    await prisma.mammaryCassette.create({
+                        data: {
+                            registro_id: parseInt(id),
+                            codigo: String(cassette.codigo),
+                            numero_sequencial: parseInt(cassette.numero_sequencial) || 0
+                        }
+                    });
+                }
+            }
+        }
+
         // Return full updated record
         const updatedRecord = await prisma.mammaryRecord.findUnique({
             where: { id: parseInt(id) },
             include: {
                 jars: { orderBy: { numero: 'asc' } },
-                images: true
+                images: true,
+                cassettes: { orderBy: { numero_sequencial: 'asc' } },
             }
         });
 

@@ -127,6 +127,24 @@ model MammaryRecord {
   lateralidade      String?
   dimensoes         String?
   peso              Decimal?  @db.Decimal(10, 2)
+  quantidade_frascos Int?     @map("quantidade_frascos")
+  volume            String?
+  linfonodo         Boolean?  @default(false)
+  
+  // Measurements
+  medida_completa      String? @map("medida_completa")
+  medida_linfonodo     String? @map("medida_linfonodo")
+  soma_blocos          Int?    @map("soma_blocos")
+  medida_nodulo        String? @map("medida_nodulo")
+  
+  // Nodule Attributes
+  aparencia_nodulo     String[] @map("aparencia_nodulo")
+  consistencia_nodulo  String[] @map("consistencia_nodulo")
+  aspecto_nodulo       String[] @map("aspecto_nodulo")
+  cor_nodulo           String[] @map("cor_nodulo")
+  
+  // Cassette Representation
+  representacao        String[]
   
   // Macroscopic Description
   aspecto_macroscopico String? @map("aspecto_macroscopico") @db.Text
@@ -140,6 +158,12 @@ model MammaryRecord {
   mamilo            String?   @db.Text
   tecido_adiposo    String?   @map("tecido_adiposo") @db.Text
   
+  // Analysis Results
+  microscopia       String?   @db.Text
+  diagnostico       String?   @db.Text
+  nota              String?   @db.Text
+  referencias       String?   @db.Text
+  
   observacoes       String?   @db.Text
   
   status            String    @default("em_analise")
@@ -149,6 +173,7 @@ model MammaryRecord {
 
   jars              MammaryJar[]
   images            MammaryImage[]
+  cassettes         MammaryCassette[]
 
   @@map("registros_mamaria")
 }
@@ -167,6 +192,18 @@ model MammaryJar {
   // Spec: "frasco_id INTEGER REFERENCES frascos_mamaria(id)" in images_mamaria. Yes.
 
   @@map("frascos_mamaria")
+}
+
+model MammaryCassette {
+  id                Int       @id @default(autoincrement())
+  registro_id       Int
+  codigo            String
+  numero_sequencial Int       @map("numero_sequencial")
+  created_at        DateTime  @default(now()) @map("created_at")
+
+  record            MammaryRecord @relation(fields: [registro_id], references: [id], onDelete: Cascade)
+
+  @@map("cassetes_mamaria")
 }
 
 model MammaryImage {

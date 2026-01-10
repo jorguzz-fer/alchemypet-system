@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { categorizeInput, generateMacroscopyAnalysis } from '../services/openaiService';
+import { categorizeInput, generateMacroscopyAnalysis, generateMammaryAnalysis } from '../services/openaiService';
 
 export const categorize = async (req: Request, res: Response) => {
     try {
@@ -30,6 +30,22 @@ export const generateReport = async (req: Request, res: Response) => {
         res.json({ reports });
     } catch (error) {
         console.error("Report Generation Error:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+export const generateMammary = async (req: Request, res: Response) => {
+    try {
+        const record = req.body;
+        if (!record) {
+            res.status(400).json({ error: "Record data is required" });
+            return;
+        }
+
+        const report = await generateMammaryAnalysis(record);
+        res.json({ report });
+    } catch (error) {
+        console.error("Mammary Report Generation Error:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
