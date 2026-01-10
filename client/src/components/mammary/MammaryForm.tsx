@@ -42,11 +42,14 @@ interface MammaryFormProps {
 const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
-    const [activeSection, setActiveSection] = useState('especime');
+
+    // Helper for today's date in YYYY-MM-DD
+    const getToday = () => new Date().toISOString().split('T')[0];
 
     const [formData, setFormData] = useState<MammaryFormData>({
         numero_guia: '',
         nome_paciente: '',
+        data_coleta: getToday(), // Default to today
         status: 'em_analise',
         jars: [{ numero: '1', conteudo: '', dimensoes: '', fixador: 'Formol 10%' }]
     });
@@ -107,7 +110,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-8 pb-12">
+        <form onSubmit={handleSubmit} className="space-y-8 pb-32">
 
             {/* Header / Basic Info */}
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
@@ -170,223 +173,194 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                 </div>
             </div>
 
-            {/* Tabs for Sections */}
-            <div className="border-b border-gray-200">
-                <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-                    {[
-                        { id: 'especime', name: 'Dados do Espécime' },
-                        { id: 'macro', name: 'Descrição Macroscópica' },
-                        { id: 'estruturas', name: 'Estruturas Específicas' },
-                        { id: 'frascos', name: 'Frascos' },
-                        { id: 'obs', name: 'Observações' }
-                    ].map((tab) => (
-                        <button
-                            key={tab.id}
-                            type="button"
-                            onClick={() => setActiveSection(tab.id)}
-                            className={`${activeSection === tab.id
-                                    ? 'border-pink-500 text-pink-600'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
-                        >
-                            {tab.name}
-                        </button>
-                    ))}
-                </nav>
-            </div>
+            {/* Vertical Stack Layout */}
 
             {/* SECTION 1: Specimen Data */}
-            {activeSection === 'especime' && (
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 animate-in fade-in slide-in-from-top-4 duration-300">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Tipo de Espécime</label>
-                            <select
-                                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
-                                value={formData.tipo_especime || ''}
-                                onChange={(e) => updateField('tipo_especime', e.target.value)}
-                            >
-                                <option value="">Selecione...</option>
-                                <option value="Mastectomia Regional">Mastectomia Regional</option>
-                                <option value="Mastectomia Total Unilateral">Mastectomia Total Unilateral</option>
-                                <option value="Mastectomia Total Bilateral">Mastectomia Total Bilateral</option>
-                                <option value="Nodulectomia">Nodulectomia</option>
-                                <option value="Fragmento de Biópsia">Fragmento de Biópsia</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Lateralidade</label>
-                            <div className="flex gap-4 mt-2">
-                                {['Direita', 'Esquerda', 'Bilateral', 'Não Informado'].map(opt => (
-                                    <label key={opt} className="inline-flex items-center">
-                                        <input
-                                            type="radio"
-                                            className="form-radio text-pink-600"
-                                            name="lateralidade"
-                                            value={opt}
-                                            checked={formData.lateralidade === opt}
-                                            onChange={(e) => updateField('lateralidade', e.target.value)}
-                                        />
-                                        <span className="ml-2 text-sm text-gray-700">{opt}</span>
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Localização</label>
-                            <input
-                                type="text"
-                                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
-                                value={formData.localizacao || ''}
-                                onChange={(e) => updateField('localizacao', e.target.value)}
-                                placeholder="Ex: Mamas abdominais craniais e caudais"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Dimensões (cm)</label>
-                            <input
-                                type="text"
-                                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
-                                value={formData.dimensoes || ''}
-                                onChange={(e) => updateField('dimensoes', e.target.value)}
-                                placeholder="Ex: 15,0 x 10,0 x 4,0"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Peso (g)</label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
-                                value={formData.peso || ''}
-                                onChange={(e) => updateField('peso', e.target.value)}
-                                placeholder="Ex: 450.5"
-                            />
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 border-l-4 border-l-blue-500">
+                <h4 className="text-lg font-semibold text-gray-800 mb-4">Dados do Espécime</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Tipo de Espécime</label>
+                        <select
+                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            value={formData.tipo_especime || ''}
+                            onChange={(e) => updateField('tipo_especime', e.target.value)}
+                        >
+                            <option value="">Selecione...</option>
+                            <option value="Mastectomia Regional">Mastectomia Regional</option>
+                            <option value="Mastectomia Total Unilateral">Mastectomia Total Unilateral</option>
+                            <option value="Mastectomia Total Bilateral">Mastectomia Total Bilateral</option>
+                            <option value="Nodulectomia">Nodulectomia</option>
+                            <option value="Fragmento de Biópsia">Fragmento de Biópsia</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Lateralidade</label>
+                        <div className="flex gap-4 mt-2">
+                            {['Direita', 'Esquerda', 'Bilateral', 'Não Informado'].map(opt => (
+                                <label key={opt} className="inline-flex items-center">
+                                    <input
+                                        type="radio"
+                                        className="form-radio text-pink-600"
+                                        name="lateralidade"
+                                        value={opt}
+                                        checked={formData.lateralidade === opt}
+                                        onChange={(e) => updateField('lateralidade', e.target.value)}
+                                    />
+                                    <span className="ml-2 text-sm text-gray-700">{opt}</span>
+                                </label>
+                            ))}
                         </div>
                     </div>
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Localização</label>
+                        <input
+                            type="text"
+                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            value={formData.localizacao || ''}
+                            onChange={(e) => updateField('localizacao', e.target.value)}
+                            placeholder="Ex: Mamas abdominais craniais e caudais"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Dimensões (cm)</label>
+                        <input
+                            type="text"
+                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            value={formData.dimensoes || ''}
+                            onChange={(e) => updateField('dimensoes', e.target.value)}
+                            placeholder="Ex: 15,0 x 10,0 x 4,0"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Peso (g)</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            value={formData.peso || ''}
+                            onChange={(e) => updateField('peso', e.target.value)}
+                            placeholder="Ex: 450.5"
+                        />
+                    </div>
                 </div>
-            )}
+            </div>
 
             {/* SECTION 2: Macroscopic Description */}
-            {activeSection === 'macro' && (
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 animate-in fade-in slide-in-from-top-4 duration-300">
-                    <div className="space-y-4">
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 border-l-4 border-l-purple-500">
+                <h4 className="text-lg font-semibold text-gray-800 mb-4">Descrição Macroscópica</h4>
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Aspecto Macroscópico Geral</label>
+                        <textarea
+                            rows={3}
+                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            value={formData.aspecto_macroscopico || ''}
+                            onChange={(e) => updateField('aspecto_macroscopico', e.target.value)}
+                            placeholder="Descreva a forma, cor externa, presença de pele..."
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Consistência</label>
+                        <input
+                            type="text"
+                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            value={formData.consistencia || ''}
+                            onChange={(e) => updateField('consistencia', e.target.value)}
+                            placeholder="Ex: Firme, elástica, duro-elástica..."
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Ao Corte (Superfície)</label>
+                        <textarea
+                            rows={3}
+                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            value={formData.superficie_corte || ''}
+                            onChange={(e) => updateField('superficie_corte', e.target.value)}
+                            placeholder="Cor, textura, presença de nódulos, cistos, áreas necróticas..."
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Margens Cirúrgicas</label>
+                        <textarea
+                            rows={2}
+                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            value={formData.margens || ''}
+                            onChange={(e) => updateField('margens', e.target.value)}
+                            placeholder="Avaliação macroscópica das margens..."
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* SECTION 3: Specific Structures */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 border-l-4 border-l-pink-500">
+                <h4 className="text-lg font-semibold text-gray-800 mb-4">Estruturas Específicas</h4>
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Pele</label>
+                        <textarea
+                            rows={2}
+                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            value={formData.pele || ''}
+                            onChange={(e) => updateField('pele', e.target.value)}
+                            placeholder="Íntegra, ulcerada, retraída, invadida..."
+                        />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Aspecto Macroscópico Geral</label>
-                            <textarea
-                                rows={3}
-                                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
-                                value={formData.aspecto_macroscopico || ''}
-                                onChange={(e) => updateField('aspecto_macroscopico', e.target.value)}
-                                placeholder="Descreva a forma, cor externa, presença de pele..."
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Consistência</label>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">Aréola</label>
                             <input
                                 type="text"
                                 className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
-                                value={formData.consistencia || ''}
-                                onChange={(e) => updateField('consistencia', e.target.value)}
-                                placeholder="Ex: Firme, elástica, duro-elástica..."
+                                value={formData.areola || ''}
+                                onChange={(e) => updateField('areola', e.target.value)}
+                                placeholder="Aspecto..."
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Ao Corte (Superfície)</label>
-                            <textarea
-                                rows={3}
+                            <label className="block text-sm font-medium text-gray-600 mb-1">Mamilo</label>
+                            <input
+                                type="text"
                                 className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
-                                value={formData.superficie_corte || ''}
-                                onChange={(e) => updateField('superficie_corte', e.target.value)}
-                                placeholder="Cor, textura, presença de nódulos, cistos, áreas necróticas..."
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Margens Cirúrgicas</label>
-                            <textarea
-                                rows={2}
-                                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
-                                value={formData.margens || ''}
-                                onChange={(e) => updateField('margens', e.target.value)}
-                                placeholder="Avaliação macroscópica das margens..."
+                                value={formData.mamilo || ''}
+                                onChange={(e) => updateField('mamilo', e.target.value)}
+                                placeholder="Proeminente, invertido, séssil..."
                             />
                         </div>
                     </div>
-                </div>
-            )}
-
-            {/* SECTION 3: Specific Structures */}
-            {activeSection === 'estruturas' && (
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 animate-in fade-in slide-in-from-top-4 duration-300">
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Pele</label>
-                            <textarea
-                                rows={2}
-                                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
-                                value={formData.pele || ''}
-                                onChange={(e) => updateField('pele', e.target.value)}
-                                placeholder="Íntegra, ulcerada, retraída, invadida..."
-                            />
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-600 mb-1">Aréola</label>
-                                <input
-                                    type="text"
-                                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
-                                    value={formData.areola || ''}
-                                    onChange={(e) => updateField('areola', e.target.value)}
-                                    placeholder="Aspecto..."
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-600 mb-1">Mamilo</label>
-                                <input
-                                    type="text"
-                                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
-                                    value={formData.mamilo || ''}
-                                    onChange={(e) => updateField('mamilo', e.target.value)}
-                                    placeholder="Proeminente, invertido, séssil..."
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Tecido Adiposo Adjacente</label>
-                            <textarea
-                                rows={2}
-                                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
-                                value={formData.tecido_adiposo || ''}
-                                onChange={(e) => updateField('tecido_adiposo', e.target.value)}
-                                placeholder="Aspecto, invasão..."
-                            />
-                        </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Tecido Adiposo Adjacente</label>
+                        <textarea
+                            rows={2}
+                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                            value={formData.tecido_adiposo || ''}
+                            onChange={(e) => updateField('tecido_adiposo', e.target.value)}
+                            placeholder="Aspecto, invasão..."
+                        />
                     </div>
                 </div>
-            )}
+            </div>
 
             {/* SECTION 4: Jars */}
-            {activeSection === 'frascos' && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
-                    <div className="flex justify-between items-center mb-4">
-                        <h4 className="text-md font-medium text-gray-700">Frascos Gerados</h4>
-                        <button
-                            type="button"
-                            onClick={addJar}
-                            className="flex items-center gap-2 bg-pink-50 text-pink-700 px-4 py-2 rounded-md hover:bg-pink-100 transition-colors font-medium text-sm border border-pink-200"
-                        >
-                            <Plus size={18} /> Adicionar Frasco
-                        </button>
-                    </div>
-
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 border-l-4 border-l-emerald-500">
+                <h4 className="text-lg font-semibold text-gray-800 mb-4">Frascos Gerados</h4>
+                <div className="space-y-4">
                     {formData.jars.length === 0 ? (
                         <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-gray-500">
                             Nenhum frasco adicionado.
+                            <button
+                                type="button"
+                                onClick={addJar}
+                                className="block mx-auto mt-2 text-pink-600 hover:underline"
+                            >
+                                Adicionar agora
+                            </button>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 gap-4">
                             {formData.jars.map((jar, index) => (
-                                <div key={index} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 relative">
+                                <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-200 relative">
                                     <button
                                         type="button"
                                         onClick={() => removeJar(index)}
@@ -437,22 +411,28 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                             ))}
                         </div>
                     )}
+
+                    <button
+                        type="button"
+                        onClick={addJar}
+                        className="flex items-center gap-2 bg-white text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors font-medium text-sm border border-gray-300 w-full justify-center border-dashed"
+                    >
+                        <Plus size={18} /> Adicionar Outro Frasco
+                    </button>
                 </div>
-            )}
+            </div>
 
             {/* SECTION 5: Observations */}
-            {activeSection === 'obs' && (
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 animate-in fade-in slide-in-from-top-4 duration-300">
-                    <label className="block text-sm font-medium text-gray-600 mb-2">Observações Gerais</label>
-                    <textarea
-                        rows={5}
-                        className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
-                        value={formData.observacoes || ''}
-                        onChange={(e) => updateField('observacoes', e.target.value)}
-                        placeholder="Informações adicionais relevantes..."
-                    />
-                </div>
-            )}
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 border-l-4 border-l-yellow-500">
+                <label className="block text-lg font-semibold text-gray-800 mb-2">Observações Gerais</label>
+                <textarea
+                    rows={5}
+                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
+                    value={formData.observacoes || ''}
+                    onChange={(e) => updateField('observacoes', e.target.value)}
+                    placeholder="Informações adicionais relevantes..."
+                />
+            </div>
 
             {/* Footer Actions */}
             <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 md:pl-72 flex items-center justify-end gap-4 z-10 shadow-lg">
