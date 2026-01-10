@@ -110,8 +110,8 @@ const RecentActivities = ({ refreshTrigger, onOpenReport, apiEndpoint = '/api/ma
                                     </td>
                                     <td className="px-4 py-3">
                                         <span className={`px-2 py-1 rounded text-xs font-medium 
-                                            ${['concluido', 'Assinado', 'assinado'].includes(item.status) ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                                            {item.status === 'em_analise' ? 'Em Análise' : item.status}
+                                            ${item.is_signed ? 'bg-blue-100 text-blue-800' : (['concluido', 'Assinado', 'assinado'].includes(item.status) ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800')}`}>
+                                            {item.is_signed ? 'Assinado' : (item.status === 'em_analise' ? 'Em Análise' : item.status)}
                                         </span>
                                     </td>
                                     <td className="px-4 py-3">
