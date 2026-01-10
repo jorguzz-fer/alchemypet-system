@@ -164,6 +164,12 @@ model MammaryRecord {
   nota              String?   @db.Text
   referencias       String?   @db.Text
   
+  // Signature & Validation
+  is_validated    Boolean?  @default(false) @map("is_validated")
+  is_signed       Boolean?  @default(false) @map("is_signed")
+  signed_by       String?   @map("signed_by")
+  signed_at       DateTime? @map("signed_at")
+  
   observacoes       String?   @db.Text
   
   status            String    @default("em_analise")

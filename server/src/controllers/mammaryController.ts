@@ -149,6 +149,7 @@ export const updateMammary = async (req: Request, res: Response) => {
         if (updateData.quantidade_frascos) updateData.quantidade_frascos = parseInt(updateData.quantidade_frascos);
         if (updateData.soma_blocos) updateData.soma_blocos = parseInt(updateData.soma_blocos);
         if (updateData.data_coleta) updateData.data_coleta = new Date(updateData.data_coleta);
+        if (updateData.signed_at) updateData.signed_at = new Date(updateData.signed_at);
 
         // Update Main Record
         await prisma.mammaryRecord.update({
