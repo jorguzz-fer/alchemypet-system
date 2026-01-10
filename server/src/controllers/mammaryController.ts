@@ -189,7 +189,7 @@ export const updateMammary = async (req: Request, res: Response) => {
             // Or just upsert/create based on ID presence
             const existingCassettes = await prisma.mammaryCassette.findMany({ where: { registro_id: parseInt(id) } });
             const incomingIds = cassettes.filter((c: any) => c.id).map((c: any) => c.id);
-            const toDelete = existingCassettes.filter(c => !incomingIds.includes(c.id));
+            const toDelete = existingCassettes.filter((c: any) => !incomingIds.includes(c.id));
 
             // Delete removed
             for (const c of toDelete) {
