@@ -218,6 +218,9 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                 setSuccess(true);
             }
 
+            // Auto open modal on save
+            setShowReportModal(true);
+
             if (onSaveSuccess) onSaveSuccess(savedRecord);
             setTimeout(() => setSuccess(false), 3000);
         } catch (error: any) {

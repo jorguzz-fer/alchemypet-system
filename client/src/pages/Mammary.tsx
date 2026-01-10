@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import MammaryForm from '../components/mammary/MammaryForm';
 import RecentActivities from '../components/macroscopy/RecentActivities';
+import MammaryReportModal from '../components/mammary/MammaryReportModal';
 import api from '../services/api';
 
 const Mammary = () => {
@@ -186,28 +187,12 @@ const Mammary = () => {
             </div>
 
             {/* Placeholder Modal */}
+            {/* Report Modal */}
             {selectedReportExam && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-200">
-                    <div className="bg-white p-6 rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all scale-100">
-                        <div className="flex justify-between items-start mb-4">
-                            <h3 className="text-xl font-bold text-gray-800">Em Desenvolvimento</h3>
-                            <button onClick={() => setSelectedReportExam(null)} className="text-gray-400 hover:text-gray-600">
-                                <Plus className="rotate-45" size={24} />
-                            </button>
-                        </div>
-                        <p className="text-gray-600 mb-6 leading-relaxed">
-                            A visualização completa do relatório e geração de PDF para o exame <strong>#{selectedReportExam.numero_guia}</strong> será implementada na próxima etapa do desenvolvimento.
-                        </p>
-                        <div className="flex justify-end">
-                            <button
-                                onClick={() => setSelectedReportExam(null)}
-                                className="px-6 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
-                            >
-                                Entendi
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <MammaryReportModal
+                    record={selectedReportExam}
+                    onClose={() => setSelectedReportExam(null)}
+                />
             )}
         </div>
     );
