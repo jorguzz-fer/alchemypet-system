@@ -167,7 +167,9 @@ const Mammary = () => {
                     >
                         <Plus size={24} /> Novo Registro
                     </button>
-                    <button className="bg-emerald-500 hover:bg-emerald-600 text-white p-4 rounded-lg shadow-md transition-all hover:-translate-y-1 flex items-center justify-center gap-3 font-semibold">
+                    <button
+                        onClick={() => document.getElementById('recent-activities')?.scrollIntoView({ behavior: 'smooth' })}
+                        className="bg-emerald-500 hover:bg-emerald-600 text-white p-4 rounded-lg shadow-md transition-all hover:-translate-y-1 flex items-center justify-center gap-3 font-semibold">
                         <Search size={24} /> Buscar Registros
                     </button>
                     <button className="bg-purple-500 hover:bg-purple-600 text-white p-4 rounded-lg shadow-md transition-all hover:-translate-y-1 flex items-center justify-center gap-3 font-semibold">
@@ -177,7 +179,7 @@ const Mammary = () => {
             </div>
 
             {/* Recent Records */}
-            <div>
+            <div id="recent-activities">
                 <h3 className="text-xl font-bold text-gray-800 mb-4 px-1">Registros Recentes</h3>
                 <RecentActivities
                     refreshTrigger={refreshTrigger}
