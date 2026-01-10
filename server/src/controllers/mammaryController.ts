@@ -27,6 +27,7 @@ export const createMammary = async (req: Request, res: Response) => {
         const cleanData: any = { ...data };
         if (cleanData.peso) cleanData.peso = parseFloat(cleanData.peso);
         if (cleanData.idade) cleanData.idade = parseInt(cleanData.idade);
+        if (cleanData.data_coleta) cleanData.data_coleta = new Date(cleanData.data_coleta);
 
         const record = await prisma.mammaryRecord.create({
             data: {
@@ -127,6 +128,7 @@ export const updateMammary = async (req: Request, res: Response) => {
         const { id: _id, created_at, updated_at, ...updateData } = data;
         if (updateData.peso) updateData.peso = parseFloat(updateData.peso);
         if (updateData.idade) updateData.idade = parseInt(updateData.idade);
+        if (updateData.data_coleta) updateData.data_coleta = new Date(updateData.data_coleta);
 
         // Update Main Record
         await prisma.mammaryRecord.update({
