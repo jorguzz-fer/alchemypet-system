@@ -242,9 +242,10 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
     const inputClass = "w-full border-2 border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 px-3 py-2";
 
     const fillWithMockData = () => {
+        const randomId = Math.floor(Math.random() * 10000);
         setFormData({
             ...formData,
-            numero_guia: '12345/24',
+            numero_guia: `TESTE-${randomId}/24`,
             nome_paciente: 'Bolinha',
             idade: '8',
             medico_solicitante: 'Dr. Fernando',
