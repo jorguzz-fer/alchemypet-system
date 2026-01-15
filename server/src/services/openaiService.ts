@@ -69,12 +69,13 @@ const generateForJar = async (patientInfo: any, jar: any): Promise<any> => {
   };
 
   const prompt = `
-        Atue como um Patologista Veterinário. Crie um laudo completo (Anatomopatológico) APENAS para o MATERIAL descrito abaixo (Frasco ${jar.numero}).
+        Atue como um Patologista Veterinário. Crie um laudo (Anatomopatológico) focando APENAS na DESCRIÇÃO MACROSCÓPICA para o MATERIAL descrito abaixo (Frasco ${jar.numero}).
         
         IMPORTANTE: 
         1. Ignore qualquer informação de outros frascos. Foco total neste frasco.
-        2. Se houver múltiplos fragmentos neste frasco, descreva-os em conjunto na macroscopia/microscopia deste frasco.
+        2. Se houver múltiplos fragmentos neste frasco, descreva-os em conjunto na macroscopia deste frasco.
         3. Não mencione "Frasco ${jar.numero}" no texto da Macroscopia, inicie a descrição diretamente.
+        4. NÃO gere microscopia ou diagnóstico.
         
         PACIENTE: ${JSON.stringify(patientInfo)}
         
@@ -85,11 +86,7 @@ const generateForJar = async (patientInfo: any, jar: any): Promise<any> => {
         
         {
             "jar_numero": "${jar.numero}",
-            "natureza": "[Inferir, ex: Formação cutânea]",
             "macroscopia": "[Texto técnico formal descrevendo a macroscopia APENAS deste frasco]",
-            "coloracao": "Hematoxilina e eosina",
-            "microscopia": "[Descrição microscópica técnica para este material]",
-            "diagnostico": "[Diagnóstico conclusivo para este frasco]",
             "observacao": "...",
             "nota": "...",
             "referencia": "..."
@@ -156,13 +153,7 @@ export const generateMammaryAnalysis = async (record: any): Promise<any> => {
       quantidade_frascos: record.quantidade_frascos,
       volume: record.volume,
       medidas_especime: record.medida_completa || record.dimensoes,
-      nodulo_principal: {
-        medida: record.medida_nodulo,
-        aparencia: record.aparencia_nodulo,
-        consistencia: record.consistencia_nodulo,
-        aspecto: record.aspecto_nodulo,
-        cor: record.cor_nodulo
-      },
+      nodules: record.nodules, // Updated to use nodules array if available
       linfonodo: record.linfonodo ? {
         presente: true,
         medida: record.medida_linfonodo
@@ -172,15 +163,12 @@ export const generateMammaryAnalysis = async (record: any): Promise<any> => {
     };
 
     const prompt = `
-        Atue como um Patologista Veterinário Sênior. Gere um laudo completo de Patologia Mamária.
+        Atue como um Patologista Veterinário Sênior. Gere a DESCRIÇÃO MACROSCÓPICA para um laudo de Patologia Mamária.
         
-        CONTEXTO DO PDF EXEMPLO:
-        - "Descrição macroscópica": Deve ser detalhada, mencionando número de frascos, tipo de mastectomia, medidas, descrição dos nódulos (M.5 maior/menor se houver), aspecto ao corte, consistência, cor, margens e linfonodos.
-        - "Descrição microscópica": Texto técnico denso, descrevendo arquitetura, tipo celular, atipias, mitoses, invasão linfática/vascular, margens, necrose, inflamação, etc.
-        - "Diagnóstico / Conclusão": Lista de diagnósticos (ex: Carcinoma, Mastocitoma, Metástase).
-        - "Observação": Notas sobre prognóstico, margens ou invasão.
-        - "Nota" e "Referência": Citações bibliográficas padrão (ex: AFIP, Goldschmidt).
-
+        CONTEXTO:
+        - "Descrição macroscópica": Deve ser detalhada, mencionando número de frascos, tipo de mastectomia, medidas, descrição dos nódulos (maior/menor se houver), aspecto ao corte, consistência, cor, margens e linfonodos.
+        - "Nota" e "Referência": Citações bibliográficas padrão se aplicável.
+        
         DADOS DO CASO:
         PACIENTE: ${JSON.stringify(patientInfo)}
         DADOS TÉCNICOS: ${JSON.stringify(technicalData, null, 2)}
@@ -188,18 +176,13 @@ export const generateMammaryAnalysis = async (record: any): Promise<any> => {
         INSTRUÇÕES:
         1. Baseie-se nos dados técnicos fornecidos para construir a Macroscopia. 
            - Se "tipo_especime" for "Mastectomia...", descreva de acordo.
-           - Use as medidas e atributos do nódulo para descrever a lesão principal.
-           - Mencione a representação em cassetes/blocos (soma_blocos ou lista de cassetes).
-        2. Para a Microscopia e Diagnóstico, como NÃO temos imagens reais, GERE UM CASO HIPOTÉTICO COERENTE com os dados macroscópicos (Simulação de Análise).
-           - Se o nódulo é "Irregular, Ulcerado", sugira malignidade (ex: Carcinoma).
-           - Se é "Bem delimitado, livre", sugira benignidade (ex: Adenoma) ou baixo grau.
-           - Crie uma descrição microscópica rica compatível com o diagnóstico sugerido.
+           - Use as medidas e atributos dos nódulos para descrever as lesões.
+           - Mencione a representação em cassetes/blocos.
+        2. NÃO gere microscopia ou diagnóstico hipotético. O usuário preencherá manualmente.
 
         SAÍDA JSON (Estritamente este formato):
         {
             "aspecto_macroscopico": "Texto completo da macroscopia...",
-            "microscopia": "Texto completo da microscopia...",
-            "diagnostico": "Texto do diagnóstico...",
             "nota": "Texto da nota padrão...",
             "referencias": "Texto das referências bibliográficas..."
         }

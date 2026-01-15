@@ -20,19 +20,20 @@ export const generateMacroscopyReport = (record: any) => {
         totalFragments += jar.fragments?.length || 0;
     });
 
-    const receiptText = `Recebido ${numberToFullText(totalJars)} frasco(s) contendo ${numberToFullText(totalFragments)} fragmento(s) de material biológico.`;
+    const receiptText = `Recebido(s) ${numberToFullText(totalJars)} frasco(s) contendo ${numberToFullText(totalFragments)} fragmento(s) de material biológico.`;
 
     // Flatten cassettes for the list, grouped by Jar if possible, or just list with Jar info
     const jarsWithCassettes: any[] = [];
     record.jars?.forEach((jar: any) => {
         const jarCassettes: any[] = [];
-        jar.fragments?.forEach((frag: any) => {
-            if (frag.cassettes) {
-                frag.cassettes.forEach((cas: any) => {
-                    jarCassettes.push({
-                        codigo: cas.codigo,
-                        text: `Acondicionado em cassete identificado como ${cas.codigo} e encaminhado para processamento histopatológico.`
-                    });
+        jar.fragments?.forEach((frag: any, fIndex: number) => {
+            if (frag.cassettes && frag.cassettes.length > 0) {
+                const codes = frag.cassettes.map((c: any) => c.codigo).join(', ');
+                const fragmentName = frag.nome || `Fragmento ${fIndex + 1}`;
+
+                jarCassettes.push({
+                    codigo: codes,
+                    text: `O material do ${fragmentName} foi seccionado e acondicionado em cassete(s) identificado(s) como ${codes} e encaminhado para processamento histopatológico.`
                 });
             }
         });
@@ -46,7 +47,7 @@ export const generateMacroscopyReport = (record: any) => {
 
     return {
         receiptText,
-        jarsWithCassettes, // New structure
+        jarsWithCassettes,
         summary: {
             jars: totalJars,
             fragments: totalFragments,

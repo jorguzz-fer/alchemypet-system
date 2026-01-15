@@ -9,12 +9,13 @@ interface FragmentSectionProps {
 }
 
 // Predefined Options (Mocking v14)
+// Predefined Options (Mocking v14)
 const OPTIONS = {
-    caracteristicas: ['Cutâneo', 'Não Cutâneo', 'Subcutâneo', 'Nodulectomia', 'Mastectomia', 'Amputação', 'Biopsia Incisional', 'Biopsia Excisional'],
-    aparencia: ['Irregular', 'Regular', 'Alopécico', 'Ulcerado', 'Pele Íntegra', 'Pigmentado', 'Elevado/Séssil', 'Pedunculado'],
-    consistencia: ['Macio', 'Firme', 'Duro', 'Elástico', 'Friável', 'Cístico (Fluído)', 'Untuoso', 'Cartilaginoso', 'Ósseo'],
-    aspecto_nodulo: ['Sólido', 'Cístico', 'Lobulado', 'Homogêneo', 'Heterogêneo', 'Hemorrágico', 'Necrótico', 'Estratificado'],
-    cor: ['Branco', 'Bege', 'Amarelo', 'Marrom', 'Preto', 'Cinza', 'Vermelho', 'Vinhoso', 'Acastanhado', 'Perolado'],
+    caracteristicas: ['Cutâneo', 'Não Cutâneo', 'Subcutâneo', 'Nodulectomia', 'Mastectomia', 'Amputação'],
+    aparencia: ['Irregular', 'Regular', 'Alopécico', 'Ulcerado', 'Não ulcerado', 'Elevado/Séssil', 'Pedunculado'],
+    consistencia: ['Macio', 'Firme', 'Duro', 'Elástico', 'Friável', 'Cístico (Fluído)', 'Untuoso', 'Fibroelástico'],
+    aspecto_nodulo: ['Sólido', 'Cístico', 'Lobulado', 'Homogêneo', 'Heterogêneo', 'Hemorrágico', 'Necrótico'],
+    cor: ['Branco', 'Bege', 'Amarelo', 'Marrom', 'Preto', 'Acastanhado'],
     representacao: ['Todo Material', 'Fragmento Representativo', 'Margens', 'Linfonodo']
 };
 
@@ -25,11 +26,7 @@ const COLOR_MAP: Record<string, string> = {
     'Amarelo': 'bg-yellow-300 text-yellow-900 border-yellow-400 hover:bg-yellow-400',
     'Marrom': 'bg-[#795548] text-white border-[#5D4037] hover:bg-[#6D4C41]',
     'Preto': 'bg-gray-900 text-white border-black hover:bg-black',
-    'Cinza': 'bg-gray-400 text-white border-gray-500 hover:bg-gray-500',
-    'Vermelho': 'bg-red-500 text-white border-red-600 hover:bg-red-600',
-    'Vinhoso': 'bg-[#880E4F] text-white border-[#6A0B3D] hover:bg-[#6A0B3D]', // Wine
     'Acastanhado': 'bg-[#A1887F] text-white border-[#8D6E63] hover:bg-[#8D6E63]', // Brownish
-    'Perolado': 'bg-[#F2EBD4] text-[#4E342E] border-[#E4DCC5] hover:bg-[#E4DCC5]', // Pearl
 };
 
 // Pastel Fallback for non-color options

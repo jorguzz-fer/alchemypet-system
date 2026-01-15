@@ -4,37 +4,36 @@ import api from '../../services/api';
 import CassetteList from '../macroscopy/CassetteList';
 import MammaryReportModal from './MammaryReportModal';
 
+interface NoduleData {
+    id: string;
+    numero: string;
+    localizacao: string;
+    medida: string;
+    aparencia: string[];
+    consistencia: string[];
+    aspecto: string[];
+    cor: string[];
+}
+
 interface MammaryFormData {
     id?: number;
     numero_guia: string;
     nome_paciente: string;
-    idade?: string;
-    medico_solicitante?: string;
-    data_coleta?: string;
     status: string;
 
     // Specimen
     tipo_especime?: string;
-    localizacao?: string;
     lateralidade?: string;
-    dimensoes?: string;
-    peso?: string;
 
-    // New Fields
+    // Config
     quantidade_frascos?: string;
-    volume?: string; // Completa, Incompleta...
     linfonodo?: boolean;
 
     medida_completa?: string;
     medida_linfonodo?: string;
-    soma_blocos?: string;
 
-    // Nodule 1
-    medida_nodulo?: string;
-    aparencia_nodulo?: string[];
-    consistencia_nodulo?: string[];
-    aspecto_nodulo?: string[];
-    cor_nodulo?: string[];
+    // Nodules List (Replacing single nodule fields)
+    nodules: NoduleData[];
 
     // Cassettes & Representation
     representacao?: string[];
@@ -59,8 +58,6 @@ interface MammaryFormData {
 
     // Specifics
     pele?: string;
-    areola?: string;
-    mamilo?: string;
     tecido_adiposo?: string;
 
     observacoes?: string;
@@ -161,20 +158,25 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
     const [success, setSuccess] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
 
-    // Helper for today's date in YYYY-MM-DD
-    const getToday = () => new Date().toISOString().split('T')[0];
-
     const [formData, setFormData] = useState<MammaryFormData>({
         numero_guia: '',
         nome_paciente: '',
-        data_coleta: getToday(), // Default to today
         status: 'em_analise',
         jars: [{ numero: '1', conteudo: '', dimensoes: '', fixador: 'Formol 10%' }],
         cassettes: [],
-        aparencia_nodulo: [],
-        consistencia_nodulo: [],
-        aspecto_nodulo: [],
-        cor_nodulo: [],
+
+        // Initial Nodule
+        nodules: [{
+            id: '1',
+            numero: '1',
+            localizacao: '',
+            medida: '',
+            aparencia: [],
+            consistencia: [],
+            aspecto: [],
+            cor: []
+        }],
+
         representacao: []
     });
 
@@ -188,6 +190,45 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
         });
     };
 
+    const addNodule = () => {
+        setFormData(prev => ({
+            ...prev,
+            nodules: [
+                ...prev.nodules,
+                {
+                    id: String(Date.now()),
+                    numero: String(prev.nodules.length + 1),
+                    localizacao: '',
+                    medida: '',
+                    aparencia: [],
+                    consistencia: [],
+                    aspecto: [],
+                    cor: []
+                }
+            ]
+        }));
+    };
+
+    const removeNodule = (index: number) => {
+        const newNodules = formData.nodules.filter((_, i) => i !== index);
+        // Reindex numbers
+        const reindexed = newNodules.map((n, i) => ({ ...n, numero: String(i + 1) }));
+        setFormData({ ...formData, nodules: reindexed });
+    };
+
+    const updateNodule = (index: number, field: keyof NoduleData, value: any) => {
+        const newNodules = [...formData.nodules];
+        newNodules[index] = { ...newNodules[index], [field]: value };
+        setFormData({ ...formData, nodules: newNodules });
+    };
+
+    const updateNoduleArray = (index: number, field: keyof NoduleData, value: string[]) => {
+        const newNodules = [...formData.nodules];
+        // @ts-ignore
+        newNodules[index] = { ...newNodules[index], [field]: value };
+        setFormData({ ...formData, nodules: newNodules });
+    };
+
     const updateJar = (index: number, field: string, value: string) => {
         const newJars = [...formData.jars];
         newJars[index] = { ...newJars[index], [field]: value };
@@ -198,6 +239,10 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
         const newJars = formData.jars.filter((_, i) => i !== index);
         const reindexedJars = newJars.map((jar, i) => ({ ...jar, numero: String(i + 1) }));
         setFormData({ ...formData, jars: reindexedJars });
+    };
+
+    const updateField = (field: keyof MammaryFormData, value: any) => {
+        setFormData({ ...formData, [field]: value });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -223,7 +268,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                 setShowReportModal(true);
             }, 100);
 
-            if (onSaveSuccess) onSaveSuccess(); // Don't pass record to avoid switching view immediately
+            if (onSaveSuccess) onSaveSuccess();
             setTimeout(() => setSuccess(false), 3000);
         } catch (error: any) {
             console.error('Error saving mammary record:', error);
@@ -234,25 +279,15 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
         }
     };
 
-    const updateField = (field: keyof MammaryFormData, value: any) => {
-        setFormData({ ...formData, [field]: value });
-    };
-
-    // Common input class for high visibility
-    const inputClass = "w-full border-2 border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 px-3 py-2";
-
     const fillWithMockData = () => {
         const randomId = Math.floor(Math.random() * 10000);
         setFormData({
             ...formData,
             numero_guia: `TESTE-${randomId}/24`,
             nome_paciente: 'Bolinha',
-            idade: '8',
-            medico_solicitante: 'Dr. Fernando',
 
             // New Fields
-            quantidade_frascos: '1',
-            volume: 'Completa',
+            quantidade_frascos: '2',
             linfonodo: true,
 
             tipo_especime: 'Mastectomia Total Unilateral',
@@ -260,24 +295,35 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
 
             medida_completa: '15,0 x 8,0 x 4,0',
             medida_linfonodo: '1,5 x 1,0 x 0,5',
-            soma_blocos: '5',
 
-            medida_nodulo: '2,5 x 2,0 x 1,5',
-            aparencia_nodulo: ['Elevado/Séssil', 'Ulcerado'],
-            consistencia_nodulo: ['Firme', 'Duro'],
-            aspecto_nodulo: ['Sólido', 'Lobulado'],
-            cor_nodulo: ['Bege', 'Branco'],
+            nodules: [
+                {
+                    id: '1',
+                    numero: '1',
+                    localizacao: 'Mamas inguinais',
+                    medida: '2,5 x 2,0 x 1,5',
+                    aparencia: ['Elevado/Séssil', 'Ulcerado'],
+                    consistencia: ['Firme', 'Duro'],
+                    aspecto: ['Sólido', 'Lobulado'],
+                    cor: ['Bege', 'Branco']
+                },
+                {
+                    id: '2',
+                    numero: '2',
+                    localizacao: 'Mama abdominal',
+                    medida: '1,0 x 1,0 x 0,5',
+                    aparencia: ['Irregular'],
+                    consistencia: ['Firme'],
+                    aspecto: ['Sólido'],
+                    cor: ['Branco']
+                }
+            ],
 
-            localizacao: 'Mamas inguinais e abdominais',
-            dimensoes: '15,0 x 8,0 x 4,0',
-            peso: '350.5',
             aspecto_macroscopico: 'Segmento cutâneo com relevo irregular e área ulcerada central de 2,0 cm.',
             consistencia: 'Firme e elástica',
             superficie_corte: 'Superfície de corte brancacenta com áreas císticas e focos de hemorragia.',
             margens: 'Livres macroscopicamente, distando 0,5 cm da lesão.',
             pele: 'Ulcerada na região central.',
-            areola: 'Presente, sem alterações visíveis.',
-            mamilo: 'Invertido e retraído.',
             tecido_adiposo: 'Amarelo e lobulado, sem sinais de invasão macroscópica.',
 
             representacao: ['Fragmento', 'Todo Material incluído'],
@@ -297,6 +343,8 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
         });
     };
 
+    const inputClass = "w-full border-2 border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 px-3 py-2";
+
     return (
         <form onSubmit={handleSubmit} className="space-y-8 pb-32">
 
@@ -306,7 +354,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                     <FlaskConical size={20} className="text-pink-500" />
                     Dados do Exame
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label className="block text-sm font-medium text-gray-600 mb-1">Número da Guia</label>
                         <input
@@ -318,7 +366,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                             placeholder="Ex: 12345/23"
                         />
                     </div>
-                    <div className="md:col-span-2">
+                    <div>
                         <label className="block text-sm font-medium text-gray-600 mb-1">Nome do Paciente</label>
                         <input
                             required
@@ -327,35 +375,6 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                             value={formData.nome_paciente}
                             onChange={(e) => updateField('nome_paciente', e.target.value)}
                             placeholder="Nome completo do animal"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Idade</label>
-                        <input
-                            type="number"
-                            className={inputClass}
-                            value={formData.idade || ''}
-                            onChange={(e) => updateField('idade', e.target.value)}
-                            placeholder="Anos"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Data da Coleta</label>
-                        <input
-                            type="date"
-                            className={`${inputClass} text-gray-600`}
-                            value={formData.data_coleta || ''}
-                            onChange={(e) => updateField('data_coleta', e.target.value)}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Médico Solicitante</label>
-                        <input
-                            type="text"
-                            className={inputClass}
-                            value={formData.medico_solicitante || ''}
-                            onChange={(e) => updateField('medico_solicitante', e.target.value)}
-                            placeholder="Dr. Veterinário"
                         />
                     </div>
                 </div>
@@ -372,15 +391,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                             placeholder="Qtd"
                         />
                     </div>
-                    <div>
-                        <SingleSelectGroup
-                            label="Volume"
-                            options={['Completa', 'Incompleta', 'Bilateral', 'Bilateral Incompleta']}
-                            selected={formData.volume}
-                            onChange={(val) => updateField('volume', val)}
-                        />
-                    </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 mt-6">
                         <input
                             type="checkbox"
                             checked={formData.linfonodo || false}
@@ -424,7 +435,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Medida Completa *</label>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Medida do Espécime (Completa) *</label>
                         <input
                             type="text"
                             className={inputClass}
@@ -443,94 +454,100 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                             placeholder="00x00x00 cm"
                         />
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Quantidade de Blocos *</label>
-                        <input
-                            type="number"
-                            className={inputClass}
-                            value={formData.soma_blocos || ''}
-                            onChange={(e) => updateField('soma_blocos', e.target.value)}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Medida - Nódulo em Mama 1 *</label>
-                        <input
-                            type="text"
-                            className={inputClass}
-                            value={formData.medida_nodulo || ''}
-                            onChange={(e) => updateField('medida_nodulo', e.target.value)}
-                            placeholder="00x00x00"
-                        />
-                    </div>
                 </div>
 
-                {/* Nodule Attributes */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-6">
-                    <div>
-                        <MultiSelectGroup
-                            label="Aparência do Nódulo 1"
-                            options={['Irregular', 'Alopécico', 'Elevado/Séssil', 'Ulcerado', 'Não Ulcerado', 'Verrucoso']}
-                            selected={formData.aparencia_nodulo}
-                            onChange={(val) => updateField('aparencia_nodulo', val)}
-                        />
-                    </div>
-                    <div>
-                        <MultiSelectGroup
-                            label="Consistência 1"
-                            options={['Macio', 'Firme', 'Duro', 'Cístico (Fluído)', 'Untuoso', 'Fibroelástico']}
-                            selected={formData.consistencia_nodulo}
-                            onChange={(val) => updateField('consistencia_nodulo', val)}
-                        />
-                    </div>
-                    <div>
-                        <MultiSelectGroup
-                            label="Aspecto do Nódulo 1"
-                            options={['Cístico (Fluído)', 'Sólido', 'Lobulado', 'Friável', 'Cavitário']}
-                            selected={formData.aspecto_nodulo}
-                            onChange={(val) => updateField('aspecto_nodulo', val)}
-                        />
-                    </div>
-                    <div>
-                        <MultiSelectGroup
-                            label="Cor 1"
-                            options={['Branco', 'Bege', 'Marrom', 'Preto']}
-                            selected={formData.cor_nodulo}
-                            onChange={(val) => updateField('cor_nodulo', val)}
-                        />
-                    </div>
-                </div>
+                {/* Nodules List */}
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                    <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center justify-between">
+                        <span>Nódulos / Lesões</span>
+                        <button
+                            type="button"
+                            onClick={addNodule}
+                            className="bg-pink-50 text-pink-700 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-pink-100 flex items-center gap-1 transition-colors"
+                        >
+                            <Plus size={16} /> Adicionar Nódulo
+                        </button>
+                    </h4>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Localização</label>
-                        <input
-                            type="text"
-                            className={inputClass}
-                            value={formData.localizacao || ''}
-                            onChange={(e) => updateField('localizacao', e.target.value)}
-                            placeholder="Ex: Mamas abdominais craniais e caudais"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Dimensões (cm) (Legacy)</label>
-                        <input
-                            type="text"
-                            className={inputClass}
-                            value={formData.dimensoes || ''}
-                            onChange={(e) => updateField('dimensoes', e.target.value)}
-                            placeholder="Ex: 15,0 x 10,0 x 4,0"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Peso (g)</label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            className={inputClass}
-                            value={formData.peso || ''}
-                            onChange={(e) => updateField('peso', e.target.value)}
-                            placeholder="Ex: 450.5"
-                        />
+                    <div className="space-y-6">
+                        {formData.nodules.map((nodule, index) => (
+                            <div key={nodule.id} className="bg-gray-50 border border-gray-200 rounded-lg p-5 relative">
+                                {formData.nodules.length > 1 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => removeNodule(index)}
+                                        className="absolute top-3 right-3 text-gray-400 hover:text-red-500 transition-colors"
+                                        title="Remover Nódulo"
+                                    >
+                                        <X size={18} />
+                                    </button>
+                                )}
+
+                                <div className="mb-4 flex items-center gap-2">
+                                    <span className="bg-pink-100 text-pink-800 text-xs font-bold px-2 py-1 rounded uppercase tracking-wider">
+                                        Nódulo {nodule.numero}
+                                    </span>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-600 mb-1">Localização</label>
+                                        <input
+                                            type="text"
+                                            className={inputClass}
+                                            value={nodule.localizacao}
+                                            onChange={(e) => updateNodule(index, 'localizacao', e.target.value)}
+                                            placeholder="Ex: M1, Inguinal Esquerda..."
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-600 mb-1">Medidas do Nódulo</label>
+                                        <input
+                                            type="text"
+                                            className={inputClass}
+                                            value={nodule.medida}
+                                            onChange={(e) => updateNodule(index, 'medida', e.target.value)}
+                                            placeholder="Ex: 2,5 x 2,0 x 1,5 cm"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                                    <div>
+                                        <MultiSelectGroup
+                                            label="Aparência"
+                                            options={['Irregular', 'Alopécico', 'Elevado/Séssil', 'Ulcerado', 'Não Ulcerado', 'Verrucoso']}
+                                            selected={nodule.aparencia}
+                                            onChange={(val) => updateNoduleArray(index, 'aparencia', val)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <MultiSelectGroup
+                                            label="Consistência"
+                                            options={['Macio', 'Firme', 'Duro', 'Cístico (Fluído)', 'Untuoso', 'Fibroelástico']}
+                                            selected={nodule.consistencia}
+                                            onChange={(val) => updateNoduleArray(index, 'consistencia', val)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <MultiSelectGroup
+                                            label="Aspecto ao Corte"
+                                            options={['Cístico (Fluído)', 'Sólido', 'Lobulado', 'Friável', 'Cavitário']}
+                                            selected={nodule.aspecto}
+                                            onChange={(val) => updateNoduleArray(index, 'aspecto', val)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <MultiSelectGroup
+                                            label="Cor"
+                                            options={['Branco', 'Bege', 'Marrom', 'Preto']}
+                                            selected={nodule.cor}
+                                            onChange={(val) => updateNoduleArray(index, 'cor', val)}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
 
@@ -637,28 +654,6 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                             onChange={(e) => updateField('pele', e.target.value)}
                             placeholder="Íntegra, ulcerada, retraída, invadida..."
                         />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Aréola</label>
-                            <input
-                                type="text"
-                                className={inputClass}
-                                value={formData.areola || ''}
-                                onChange={(e) => updateField('areola', e.target.value)}
-                                placeholder="Aspecto..."
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Mamilo</label>
-                            <input
-                                type="text"
-                                className={inputClass}
-                                value={formData.mamilo || ''}
-                                onChange={(e) => updateField('mamilo', e.target.value)}
-                                placeholder="Proeminente, invertido, séssil..."
-                            />
-                        </div>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-600 mb-1">Tecido Adiposo Adjacente</label>

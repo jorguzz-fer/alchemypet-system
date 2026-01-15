@@ -93,7 +93,11 @@ Total de frascos: ${report.summary.jars}
                 const newReports = [...aiReports];
                 newReports[index] = {
                     ...newReports[index],
-                    ...gen,
+                    // Only update Macroscopy related fields
+                    macroscopia: gen.macroscopia || newReports[index].macroscopia,
+                    observacao: gen.observacao || newReports[index].observacao,
+                    nota: gen.nota || newReports[index].nota,
+                    // generated: true indicates AI run was successful
                     generated: true
                 };
                 setAiReports(newReports);
