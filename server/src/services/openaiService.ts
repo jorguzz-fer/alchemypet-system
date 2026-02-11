@@ -71,11 +71,13 @@ const generateForJar = async (patientInfo: any, jar: any): Promise<any> => {
   const prompt = `
         Atue como um Patologista Veterinário. Crie um laudo (Anatomopatológico) focando APENAS na DESCRIÇÃO MACROSCÓPICA para o MATERIAL descrito abaixo (Frasco ${jar.numero}).
         
-        IMPORTANTE: 
+        IMPORTANTE - REGRAS ESTRITAS: 
         1. Ignore qualquer informação de outros frascos. Foco total neste frasco.
         2. Se houver múltiplos fragmentos neste frasco, descreva-os em conjunto na macroscopia deste frasco.
         3. Não mencione "Frasco ${jar.numero}" no texto da Macroscopia, inicie a descrição diretamente.
-        4. NÃO gere microscopia ou diagnóstico.
+        4. PROIBIDO gerar "Microscopia".
+        5. PROIBIDO gerar "Diagnóstico".
+        6. NÃO invente informações de biópsia (Incisional/Excisional) se não estiverem explícitas.
         
         PACIENTE: ${JSON.stringify(patientInfo)}
         
@@ -96,7 +98,7 @@ const generateForJar = async (patientInfo: any, jar: any): Promise<any> => {
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [
-      { role: "system", content: "Você é um especialista em Patologia Veterinária. Retorne apenas JSON válido." },
+      { role: "system", content: "Você é um especialista em Patologia Veterinária. GERE APENAS MACROSCOPIA. NUNCA GERE MICROSCOPIA OU DIAGNÓSTICO." },
       { role: "user", content: prompt }
     ],
     temperature: 0.5,
@@ -143,7 +145,7 @@ export const generateMammaryAnalysis = async (record: any): Promise<any> => {
     const patientInfo = {
       id: record.numero_guia,
       paciente: record.nome_paciente,
-      idade: record.idade
+      // idade removed as requested
     };
 
     const technicalData = {
@@ -153,7 +155,7 @@ export const generateMammaryAnalysis = async (record: any): Promise<any> => {
       quantidade_frascos: record.quantidade_frascos,
       volume: record.volume,
       medidas_especime: record.medida_completa || record.dimensoes,
-      nodules: record.nodules, // Updated to use nodules array if available
+      nodules: record.nodules,
       linfonodo: record.linfonodo ? {
         presente: true,
         medida: record.medida_linfonodo
@@ -173,12 +175,12 @@ export const generateMammaryAnalysis = async (record: any): Promise<any> => {
         PACIENTE: ${JSON.stringify(patientInfo)}
         DADOS TÉCNICOS: ${JSON.stringify(technicalData, null, 2)}
 
-        INSTRUÇÕES:
-        1. Baseie-se nos dados técnicos fornecidos para construir a Macroscopia. 
-           - Se "tipo_especime" for "Mastectomia...", descreva de acordo.
-           - Use as medidas e atributos dos nódulos para descrever as lesões.
-           - Mencione a representação em cassetes/blocos.
-        2. NÃO gere microscopia ou diagnóstico hipotético. O usuário preencherá manualmente.
+        INSTRUÇÕES ESTRITAS:
+        1. Baseie-se APENAS nos dados técnicos fornecidos.
+        2. NÃO invente "Idade", "Data", "Médico", "Peso" se não fornecido.
+        3. PROIBIDO gerar "Microscopia".
+        4. PROIBIDO gerar "Diagnóstico".
+        5. Evite termos humanos como "Aréola" ou "Mamilo" a menos que explicitamente no input. Use termos veterinários (Papila mamária).
 
         SAÍDA JSON (Estritamente este formato):
         {
@@ -191,7 +193,7 @@ export const generateMammaryAnalysis = async (record: any): Promise<any> => {
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
-        { role: "system", content: "Você é um especialista em Patologia Veterinária (Mamária). Retorne apenas JSON válido." },
+        { role: "system", content: "Você é um especialista em Patologia Veterinária (Mamária). GERE APENAS MACROSCOPIA. NUNCA GERE MICROSCOPIA OU DIAGNÓSTICO." },
         { role: "user", content: prompt }
       ],
       temperature: 0.6,

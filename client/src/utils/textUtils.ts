@@ -99,61 +99,59 @@ export const generateMacroscopyReport = (record: any) => {
         totalFragments += jar.fragments?.length || 0;
     });
 
-    // RECEBIMENTO
-    const receiptText = `Recebido(s) ${numberToFullText(totalJars)} frasco(s) contendo ${numberToFullText(totalFragments)} fragmento(s) de material biológico.`;
+    // RECEBIMENTO & MACROSCOPIA Unified
+    // Format: "Recebido(s) [qty] frasco(s)... [Description]..."
+    const receiptHeader = `Recebido(s) ${numberToFullText(totalJars)} frasco(s) contendo ${numberToFullText(totalFragments)} fragmento(s) de material biológico.`;
 
-    // MACROSCOPIA - Build descriptive text per jar/fragment
     const macroscopyParts: string[] = [];
-    const jarsWithCassettes: any[] = [];
+    const cassetteSummaries: string[] = [];
 
     jars.forEach((jar: any) => {
         const fragments = jar.fragments || [];
-        const jarCassettes: any[] = [];
 
         fragments.forEach((frag: any, fIndex: number) => {
             const fragLabel = `Fragmento ${fIndex + 1}`;
             const description = buildFragmentDescription(frag, fragLabel);
 
+            // Add Observation if present
+            const obs = frag.observacoes ? ` ${frag.observacoes}` : '';
+
             if (totalJars > 1) {
-                macroscopyParts.push(`Frasco ${jar.numero}, ${fragLabel}: ${description}`);
+                macroscopyParts.push(`Frasco ${jar.numero}, ${fragLabel}: ${description}${obs}`);
             } else {
-                macroscopyParts.push(`${fragLabel}: ${description}`);
+                macroscopyParts.push(`${fragLabel}: ${description}${obs}`);
             }
 
             // Cassettes for this fragment
             if (frag.cassettes && frag.cassettes.length > 0) {
-                const codes = frag.cassettes.map((c: any) => c.codigo).join(', ');
-                jarCassettes.push({
-                    codigo: codes,
-                    text: `O material do ${fragLabel} foi seccionado e acondicionado em cassete(s) identificado(s) como ${codes} e encaminhado para processamento histopatológico.`
+                frag.cassettes.forEach((c: any) => {
+                    cassetteSummaries.push(`${c.codigo}: ${fragLabel} (${jar.numero})`);
+                    // Or simpler: "A: Fragmento 1"
                 });
             }
         });
-
-        if (jarCassettes.length > 0) {
-            jarsWithCassettes.push({
-                jarNumero: jar.numero,
-                cassettes: jarCassettes
-            });
-        }
     });
 
-    const macroscopyText = macroscopyParts.join('\n');
+    // Combine all
+    const fullText = [
+        receiptHeader,
+        ...macroscopyParts,
+        '\n',
+        'O material foi seccionado e encaminhado para processamento histopatológico.',
+    ].join('\n');
 
-    // CASSETES text
-    const cassettesText = jarsWithCassettes.map((jarData: any) => {
-        return jarData.cassettes.map((c: any) => c.text).join('\n');
-    }).join('\n');
+    // Simplified Cassette List
+    // Filter duplicates/sort if needed, but assuming unique codes
+    const cassettesText = cassetteSummaries.join('\n');
 
     return {
-        receiptText,
-        macroscopyText,
+        receiptText: receiptHeader, // Keeping for backward compat if needed, but mapped to fullText primarily
+        macroscopyText: fullText,
         cassettesText,
-        jarsWithCassettes,
         summary: {
             jars: totalJars,
             fragments: totalFragments,
-            cassettes: jarsWithCassettes.reduce((acc: number, j: any) => acc + j.cassettes.length, 0)
+            cassettes: cassetteSummaries.length
         }
     };
 };

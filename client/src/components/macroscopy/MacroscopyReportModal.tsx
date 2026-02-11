@@ -12,7 +12,6 @@ const MacroscopyReportModal = ({ record, onClose }: MacroscopyReportModalProps) 
     const report = generateMacroscopyReport(record);
 
     // State for editable report sections
-    const [receiptText, setReceiptText] = useState(report.receiptText);
     const [macroscopyText, setMacroscopyText] = useState(report.macroscopyText);
     const [cassettesText, setCassettesText] = useState(report.cassettesText);
 
@@ -120,9 +119,7 @@ const MacroscopyReportModal = ({ record, onClose }: MacroscopyReportModalProps) 
         const fullText = `Guia: ${record.numero_guia}
 Paciente: ${record.nome_paciente}
 
-RECEBIMENTO E MACROSCOPIA
-
-${receiptText}
+MACROSCOPIA (Inclui Recebimento)
 
 ${macroscopyText}
 
@@ -182,23 +179,13 @@ Total de frascos: ${report.summary.jars}`.trim();
 
                     {/* RECEBIMENTO E MACROSCOPIA */}
                     <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
-                        <h3 className="text-sm font-bold text-gray-700 uppercase mb-4 tracking-wider">Recebimento e Macroscopia</h3>
+                        <h3 className="text-sm font-bold text-gray-700 uppercase mb-4 tracking-wider">Macroscopia (Inclui Recebimento)</h3>
 
                         <div className="mb-4">
-                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Recebimento</label>
+                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Descrição Completa</label>
                             <textarea
-                                rows={2}
-                                className="w-full text-sm text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
-                                value={receiptText}
-                                onChange={(e) => setReceiptText(e.target.value)}
-                            />
-                        </div>
-
-                        <div className="mb-4">
-                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Descrição Macroscópica</label>
-                            <textarea
-                                rows={8}
-                                className="w-full text-sm text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                                rows={12}
+                                className="w-full text-sm text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500 font-mono leading-relaxed"
                                 value={macroscopyText}
                                 onChange={(e) => setMacroscopyText(e.target.value)}
                             />

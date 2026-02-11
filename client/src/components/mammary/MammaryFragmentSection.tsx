@@ -12,8 +12,8 @@ interface MammaryFragmentSectionProps {
 // Mammary-specific options (from reference mamaria-v1)
 const OPTIONS = {
     caracteristicas: ['Cutâneo', 'Não Cutâneo', 'Subcutâneo', 'Nodulectomia'],
-    aparencia: ['Irregular', 'Alopécico', 'Elevado/Séssil', 'Ulcerado'],
-    consistencia: ['Macio', 'Firme', 'Duro', 'Cístico (Fluído)'],
+    aparencia: ['Irregular', 'Alopécico', 'Elevado/Séssil', 'Ulcerado', 'Não ulcerado'],
+    consistencia: ['Macio', 'Firme', 'Duro', 'Cístico (Fluído)', 'Fibroelástico'],
     aspecto_nodulo: ['Cístico (Fluído)', 'Sólido', 'Lobulado', 'Friável'],
     cor: ['Branco', 'Bege', 'Marrom', 'Preto'],
     representacao: ['Todo Material incluído', 'Fragmento']
