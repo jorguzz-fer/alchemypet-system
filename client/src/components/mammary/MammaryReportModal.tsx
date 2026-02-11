@@ -38,9 +38,10 @@ const MammaryReportModal = ({ record, onClose }: MammaryReportModalProps) => {
                 if (genReport.nota) setNota(genReport.nota);
                 if (genReport.referencias) setReferencias(genReport.referencias);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Erro ao gerar relatório IA:", error);
-            alert("Erro ao gerar análise. Verifique o console.");
+            const serverMessage = error?.response?.data?.error;
+            alert(serverMessage || "Erro ao gerar análise. Verifique o console.");
         } finally {
             setLoadingAi(false);
         }

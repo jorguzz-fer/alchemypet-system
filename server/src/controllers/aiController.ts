@@ -28,9 +28,10 @@ export const generateReport = async (req: Request, res: Response) => {
 
         const reports = await generateMacroscopyAnalysis(record);
         res.json({ reports });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Report Generation Error:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+        const message = error?.message || "Internal Server Error";
+        res.status(500).json({ error: message });
     }
 };
 
@@ -44,8 +45,9 @@ export const generateMammary = async (req: Request, res: Response) => {
 
         const report = await generateMammaryAnalysis(record);
         res.json({ report });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Mammary Report Generation Error:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+        const message = error?.message || "Internal Server Error";
+        res.status(500).json({ error: message });
     }
 };

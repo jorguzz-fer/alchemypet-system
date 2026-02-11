@@ -23,7 +23,7 @@ const Macroscopy = () => {
             try {
                 // Fetching from existing macroscopy endpoint
                 // Note: We might need to adjust the endpoint if it differs from mammary
-                const response = await api.get('/macroscopy');
+                const response = await api.get('/api/macroscopy');
                 const records = response.data;
 
                 const today = new Date().toISOString().split('T')[0];

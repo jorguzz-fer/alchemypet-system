@@ -67,9 +67,10 @@ const MacroscopyReportModal = ({ record, onClose }: MacroscopyReportModalProps) 
                 };
                 setAiReports(newReports);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Erro ao gerar relatório IA:", error);
-            alert("Erro ao gerar relatório com IA.");
+            const serverMessage = error?.response?.data?.error;
+            alert(serverMessage || "Erro ao gerar relatório com IA.");
         } finally {
             setLoadingAiIndex(null);
         }
