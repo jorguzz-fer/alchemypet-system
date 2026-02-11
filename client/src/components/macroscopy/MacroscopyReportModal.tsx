@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Copy, ArrowLeft, Mail, Share2, Check, FileCheck, CheckCircle2 } from 'lucide-react';
+import { Copy, ArrowLeft, Mail, Share2, Check, FileCheck, CheckCircle2, Wand2 } from 'lucide-react';
 import { generateMacroscopyReport } from '../../utils/textUtils';
 import api from '../../services/api';
 
@@ -11,33 +11,12 @@ interface MacroscopyReportModalProps {
 const MacroscopyReportModal = ({ record, onClose }: MacroscopyReportModalProps) => {
     const report = generateMacroscopyReport(record);
 
-    const handleCopy = () => {
-        // Construct copy text with grouped cassettes
-        const cassetteText = report.jarsWithCassettes?.map((j: any) => `
-FRASCO ${j.jarNumero}:
-${j.cassettes.map((c: any) => `${c.codigo}: ${c.text}`).join('\n')}
-`).join('\n') || '';
+    // State for editable report sections
+    const [receiptText, setReceiptText] = useState(report.receiptText);
+    const [macroscopyText, setMacroscopyText] = useState(report.macroscopyText);
+    const [cassettesText, setCassettesText] = useState(report.cassettesText);
 
-        const fullText = `
-**Guia: ${record.numero_guia}**
-**Paciente: ${record.nome_paciente}**
-
-RECEBIMENTO
-${report.receiptText}
-
-IDENTIFICAÇÃO E DESCRIÇÃO MACROSCÓPICA
-${cassetteText}
-
-RESUMO
-Material processado: ${report.summary.fragments} fragmentos em ${report.summary.cassettes} cassetes
-Total de frascos: ${report.summary.jars}
-        `.trim();
-
-        navigator.clipboard.writeText(fullText);
-        alert('Relatório copiado para a área de transferência!');
-    };
-
-    // State
+    // Per-jar AI reports (for coloração, observação, nota)
     const [aiReports, setAiReports] = useState<any[]>([]);
     const [loadingAiIndex, setLoadingAiIndex] = useState<number | null>(null);
     const [saving, setSaving] = useState(false);
@@ -53,16 +32,11 @@ Total de frascos: ${report.summary.jars}
             const mappedReports = record.jars.map((jar: any) => ({
                 jar_id: jar.id,
                 jar_numero: jar.numero,
-                // Only pre-fill if data exists
-                natureza: jar.natureza || '',
                 macroscopia: jar.macroscopia || '',
-                coloracao: jar.coloracao || '', // Empty by default as requested
-                microscopia: jar.microscopia || '',
-                diagnostico: jar.diagnostico || '',
+                coloracao: jar.coloracao || '',
                 observacao: jar.observacao || '',
                 nota: jar.nota || '',
-                // Flag to control accordion
-                generated: !!(jar.macroscopia || jar.microscopia || jar.diagnostico)
+                generated: !!(jar.macroscopia)
             }));
             setAiReports(mappedReports);
         }
@@ -71,38 +45,28 @@ Total de frascos: ${report.summary.jars}
     const handleGenerateSingle = async (index: number) => {
         setLoadingAiIndex(index);
         try {
-            // Filter record to only include the target jar for generation
             const targetJar = record.jars.find((j: any) => String(j.numero) === String(aiReports[index].jar_numero));
-
             if (!targetJar) {
                 alert("Erro ao localizar dados do frasco.");
                 return;
             }
 
-            const payload = {
-                ...record,
-                jars: [targetJar]
-            };
-
+            const payload = { ...record, jars: [targetJar] };
             const response = await api.post('/api/ai/generate-report', payload);
             const generatedReports = response.data.reports || [];
 
-            // Should be only one report
             if (generatedReports.length > 0) {
                 const gen = generatedReports[0];
                 const newReports = [...aiReports];
                 newReports[index] = {
                     ...newReports[index],
-                    // Only update Macroscopy related fields
                     macroscopia: gen.macroscopia || newReports[index].macroscopia,
                     observacao: gen.observacao || newReports[index].observacao,
                     nota: gen.nota || newReports[index].nota,
-                    // generated: true indicates AI run was successful
                     generated: true
                 };
                 setAiReports(newReports);
             }
-
         } catch (error) {
             console.error("Erro ao gerar relatório IA:", error);
             alert("Erro ao gerar relatório com IA.");
@@ -114,20 +78,16 @@ Total de frascos: ${report.summary.jars}
     const handleSave = async (signed: boolean = false) => {
         setSaving(true);
         try {
-            // Prepare Payload
             const payload = {
                 is_validated: isValidated,
                 is_signed: signed,
                 signed_by: signedBy,
-                signed_at: signed ? new Date().toISOString() : null, // Backend can handle date too
+                signed_at: signed ? new Date().toISOString() : null,
                 jars: aiReports.map(report => ({
                     id: report.jar_id,
                     numero: report.jar_numero,
-                    natureza: report.natureza,
                     macroscopia: report.macroscopia,
                     coloracao: report.coloracao,
-                    microscopia: report.microscopia,
-                    diagnostico: report.diagnostico,
                     observacao: report.observacao,
                     nota: report.nota
                 }))
@@ -142,7 +102,6 @@ Total de frascos: ${report.summary.jars}
             } else {
                 alert('Salvo com sucesso!');
             }
-
         } catch (error) {
             console.error("Erro ao salvar:", error);
             alert("Erro ao salvar relatório.");
@@ -155,6 +114,28 @@ Total de frascos: ${report.summary.jars}
         const newReports = [...aiReports];
         newReports[index] = { ...newReports[index], [field]: value };
         setAiReports(newReports);
+    };
+
+    const handleCopy = () => {
+        const fullText = `Guia: ${record.numero_guia}
+Paciente: ${record.nome_paciente}
+
+RECEBIMENTO E MACROSCOPIA
+
+${receiptText}
+
+${macroscopyText}
+
+CASSETES
+
+${cassettesText}
+
+RESUMO
+Material processado: ${report.summary.fragments} fragmento(s) em ${report.summary.cassettes} cassete(s)
+Total de frascos: ${report.summary.jars}`.trim();
+
+        navigator.clipboard.writeText(fullText);
+        alert('Relatório copiado para a área de transferência!');
     };
 
     return (
@@ -199,122 +180,83 @@ Total de frascos: ${report.summary.jars}
                         </div>
                     </div>
 
-                    {/* Original Description (Grouped by Jar) */}
-                    <div className="bg-gray-100 p-6 rounded-lg mb-8 opacity-75 hover:opacity-100 transition-opacity">
-                        <h3 className="text-sm font-bold text-gray-700 uppercase mb-4">Dados Originais (Macroscopia)</h3>
-                        <div className="space-y-4 text-sm text-gray-600">
-                            <div>
-                                <span className="font-bold">Recebimento:</span> {report.receiptText}
-                            </div>
-                            <div>
-                                <span className="font-bold">Cassetes:</span>
-                                <div className="mt-2 space-y-3">
-                                    {report.jarsWithCassettes?.map((jarData: any, i: number) => (
-                                        <div key={i}>
-                                            <p className="font-bold text-gray-700 text-xs uppercase mb-1">Frasco {jarData.jarNumero}:</p>
-                                            <ul className="list-disc pl-5 space-y-1">
-                                                {jarData.cassettes.map((c: any, j: number) => (
-                                                    <li key={j}><span className="font-semibold">{c.codigo}:</span> {c.text}</li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+                    {/* RECEBIMENTO E MACROSCOPIA */}
+                    <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
+                        <h3 className="text-sm font-bold text-gray-700 uppercase mb-4 tracking-wider">Recebimento e Macroscopia</h3>
+
+                        <div className="mb-4">
+                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Recebimento</label>
+                            <textarea
+                                rows={2}
+                                className="w-full text-sm text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                                value={receiptText}
+                                onChange={(e) => setReceiptText(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Descrição Macroscópica</label>
+                            <textarea
+                                rows={8}
+                                className="w-full text-sm text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                                value={macroscopyText}
+                                onChange={(e) => setMacroscopyText(e.target.value)}
+                            />
                         </div>
                     </div>
 
-                    {/* AI Reports Section */}
+                    {/* CASSETES */}
+                    <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
+                        <h3 className="text-sm font-bold text-gray-700 uppercase mb-4 tracking-wider">Cassetes</h3>
+                        <textarea
+                            rows={4}
+                            className="w-full text-sm text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                            value={cassettesText}
+                            onChange={(e) => setCassettesText(e.target.value)}
+                        />
+                    </div>
+
+                    {/* Per-Jar AI Analysis (optional enhancement) */}
                     {aiReports.length > 0 && (
                         <div className="space-y-4 mb-8">
+                            <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Análise por Frasco (IA)</h3>
                             {aiReports.map((aiReport, index) => (
-                                <div key={index} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden transition-all">
-                                    {/* Card Header for Accordion */}
+                                <div key={index} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
                                     <div className="flex justify-between items-center bg-gray-50 px-6 py-4 border-b border-gray-100">
                                         <div className="flex items-center gap-3">
                                             <div className="bg-purple-100 text-purple-700 px-3 py-1 rounded text-xs font-bold uppercase tracking-wider">
                                                 Frasco {aiReport.jar_numero}
                                             </div>
-                                            <h3 className="font-bold text-gray-800">
-                                                Análise - Frasco {aiReport.jar_numero}
-                                            </h3>
                                         </div>
-
-                                        {!aiReport.generated && (
-                                            <button
-                                                onClick={() => handleGenerateSingle(index)}
-                                                disabled={loadingAiIndex === index}
-                                                className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50"
-                                            >
-                                                {loadingAiIndex === index ? 'Gerando...' : 'Gerar Análise'}
-                                            </button>
-                                        )}
+                                        <button
+                                            onClick={() => handleGenerateSingle(index)}
+                                            disabled={loadingAiIndex === index}
+                                            className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                                        >
+                                            <Wand2 size={14} />
+                                            {loadingAiIndex === index ? 'Gerando...' : aiReport.generated ? 'Regenerar IA' : 'Gerar com IA'}
+                                        </button>
                                     </div>
 
-                                    {/* Action Button if Not Generated (as generic CTA in body too) */}
-                                    {!aiReport.generated && loadingAiIndex !== index && (
-                                        <div className="p-8 flex justify-center bg-white">
-                                            <p className="text-gray-400 text-sm italic mr-4">Nenhuma análise gerada ainda.</p>
-                                        </div>
-                                    )}
-
-                                    {/* Generated Content */}
                                     {aiReport.generated && (
-                                        <div className="p-6 animate-in fade-in slide-in-from-top-2 duration-300">
-                                            {/* Natureza */}
-                                            <div className="mb-4">
-                                                <label className="block text-sm font-bold text-gray-700 mb-1">Natureza do material:</label>
-                                                <input
-                                                    className="w-full text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
-                                                    value={aiReport.natureza || ''}
-                                                    onChange={(e) => updateReport(index, 'natureza', e.target.value)}
-                                                />
-                                            </div>
-
-                                            {/* Macroscopia */}
-                                            <div className="mb-4">
-                                                <label className="block text-sm font-bold text-gray-700 mb-1">Macroscopia:</label>
+                                        <div className="p-6 space-y-4 animate-in fade-in">
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-700 mb-1">Macroscopia (IA):</label>
                                                 <textarea
                                                     rows={4}
-                                                    className="w-full text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                                                    className="w-full text-gray-800 border-gray-300 rounded focus:ring-purple-500"
                                                     value={aiReport.macroscopia || ''}
                                                     onChange={(e) => updateReport(index, 'macroscopia', e.target.value)}
                                                 />
                                             </div>
-
-                                            {/* Coloração */}
-                                            <div className="mb-4">
+                                            <div>
                                                 <label className="block text-sm font-bold text-gray-700 mb-1">Coloração:</label>
                                                 <input
-                                                    className="w-full text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                                                    className="w-full text-gray-800 border-gray-300 rounded focus:ring-purple-500"
                                                     value={aiReport.coloracao || ''}
                                                     onChange={(e) => updateReport(index, 'coloracao', e.target.value)}
                                                 />
                                             </div>
-
-                                            {/* Microscopia */}
-                                            <div className="mb-4">
-                                                <label className="block text-sm font-bold text-gray-700 mb-1">Microscopia:</label>
-                                                <textarea
-                                                    rows={6}
-                                                    className="w-full text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
-                                                    value={aiReport.microscopia || ''}
-                                                    onChange={(e) => updateReport(index, 'microscopia', e.target.value)}
-                                                />
-                                            </div>
-
-                                            {/* Diagnóstico */}
-                                            <div className="mb-6">
-                                                <label className="block text-sm font-bold text-gray-700 mb-1">Diagnóstico:</label>
-                                                <textarea
-                                                    rows={2}
-                                                    className="w-full text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500 font-bold bg-gray-50"
-                                                    value={aiReport.diagnostico || ''}
-                                                    onChange={(e) => updateReport(index, 'diagnostico', e.target.value)}
-                                                />
-                                            </div>
-
-                                            {/* Notes & Refs */}
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                                                 <div>
                                                     <label className="block text-xs font-bold text-gray-500 mb-1">Observação:</label>
@@ -339,74 +281,64 @@ Total de frascos: ${report.summary.jars}
                                     )}
                                 </div>
                             ))}
-
-                            {/* Signatures & Validation - Only active if at least one report generated? No, always accessible. */}
-                            <div className="bg-white border border-gray-200 p-6 rounded-lg shadow-sm">
-                                <h4 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4 border-b pb-2">Validação e Assinatura</h4>
-
-                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                    <div className="flex gap-6">
-                                        <label className="flex items-center gap-2 cursor-pointer">
-                                            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isValidated ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 bg-white'}`}>
-                                                {isValidated && <Check size={14} />}
-                                            </div>
-                                            <input type="checkbox" className="hidden" checked={isValidated} onChange={() => setIsValidated(!isValidated)} />
-                                            <span className="text-sm font-medium text-gray-700">Validado</span>
-                                        </label>
-
-                                        <label className="flex items-center gap-2 cursor-pointer">
-                                            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSigned ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-300 bg-white'}`}>
-                                                {isSigned && <Check size={14} />}
-                                            </div>
-                                            <input type="checkbox" className="hidden" checked={isSigned} onChange={() => setIsSigned(!isSigned)} />
-                                            <span className="text-sm font-medium text-gray-700">Assinado Eletronicamente</span>
-                                        </label>
-                                    </div>
-
-                                    <div className="flex items-center gap-3 w-full md:w-auto">
-                                        {isSigned && (
-                                            <input
-                                                type="text"
-                                                placeholder="Nome do Profissional"
-                                                className="border-gray-300 rounded text-sm w-full md:w-48 animate-in fade-in"
-                                                value={signedBy}
-                                                onChange={(e) => setSignedBy(e.target.value)}
-                                            />
-                                        )}
-
-                                        <button
-                                            onClick={() => handleSave(false)}
-                                            className="px-4 py-2 rounded text-sm font-medium transition-colors border bg-white text-gray-800 hover:bg-gray-50 border-gray-300"
-                                            disabled={saving}
-                                        >
-                                            {saving ? 'Salvando...' : 'Salvar'}
-                                        </button>
-
-                                        <button
-                                            onClick={() => setIsValidated(!isValidated)}
-                                            className={`px-4 py-2 rounded text-sm font-medium transition-colors border ${isValidated ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300'}`}
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <FileCheck size={16} /> Validar
-                                            </div>
-                                        </button>
-
-                                        <button
-                                            onClick={() => {
-                                                setIsSigned(true);
-                                                handleSave(true);
-                                            }}
-                                            disabled={saving}
-                                            className={`px-4 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2 ${isSigned ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-800 text-white hover:bg-gray-700'}`}
-                                        >
-                                            <CheckCircle2 size={16} /> Assinar e Fechar
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     )}
 
+                    {/* Signature & Validation */}
+                    <div className="bg-white border border-gray-200 p-6 rounded-lg shadow-sm mb-6">
+                        <h4 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4 border-b pb-2">Validação e Assinatura</h4>
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div className="flex gap-6">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isValidated ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 bg-white'}`}>
+                                        {isValidated && <Check size={14} />}
+                                    </div>
+                                    <input type="checkbox" className="hidden" checked={isValidated} onChange={() => setIsValidated(!isValidated)} />
+                                    <span className="text-sm font-medium text-gray-700">Validado</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSigned ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-300 bg-white'}`}>
+                                        {isSigned && <Check size={14} />}
+                                    </div>
+                                    <input type="checkbox" className="hidden" checked={isSigned} onChange={() => setIsSigned(!isSigned)} />
+                                    <span className="text-sm font-medium text-gray-700">Assinado Eletronicamente</span>
+                                </label>
+                            </div>
+                            <div className="flex items-center gap-3 w-full md:w-auto">
+                                {isSigned && (
+                                    <input
+                                        type="text"
+                                        placeholder="Nome do Profissional"
+                                        className="border-gray-300 rounded text-sm w-full md:w-48 animate-in fade-in"
+                                        value={signedBy}
+                                        onChange={(e) => setSignedBy(e.target.value)}
+                                    />
+                                )}
+                                <button
+                                    onClick={() => handleSave(false)}
+                                    className="px-4 py-2 rounded text-sm font-medium transition-colors border bg-white text-gray-800 hover:bg-gray-50 border-gray-300"
+                                    disabled={saving}
+                                >
+                                    {saving ? 'Salvando...' : 'Salvar'}
+                                </button>
+                                <button
+                                    onClick={() => setIsValidated(!isValidated)}
+                                    className={`px-4 py-2 rounded text-sm font-medium transition-colors border ${isValidated ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300'}`}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <FileCheck size={16} /> Validar
+                                    </div>
+                                </button>
+                                <button
+                                    onClick={() => { setIsSigned(true); handleSave(true); }}
+                                    disabled={saving}
+                                    className={`px-4 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2 ${isSigned ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-800 text-white hover:bg-gray-700'}`}
+                                >
+                                    <CheckCircle2 size={16} /> Assinar e Fechar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
 
                     {/* Share Footer */}
                     <div className="border-t border-gray-200 pt-6 flex justify-between items-center text-gray-500">
@@ -421,7 +353,6 @@ Total de frascos: ${report.summary.jars}
                             </button>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>

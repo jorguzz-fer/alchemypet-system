@@ -1,269 +1,156 @@
 import { useState } from 'react';
-import { Plus, Save, Loader2, X, FlaskConical, Wand2 } from 'lucide-react';
+import { Plus, Save, Loader2, FlaskConical, Wand2, TestTube, Trash2, AlertCircle } from 'lucide-react';
 import api from '../../services/api';
-import CassetteList from '../macroscopy/CassetteList';
+import MammaryFragmentSection from './MammaryFragmentSection';
 import MammaryReportModal from './MammaryReportModal';
-
-interface NoduleData {
-    id: string;
-    numero: string;
-    localizacao: string;
-    medida: string;
-    aparencia: string[];
-    consistencia: string[];
-    aspecto: string[];
-    cor: string[];
-}
 
 interface MammaryFormData {
     id?: number;
     numero_guia: string;
     nome_paciente: string;
     status: string;
-
-    // Specimen
-    tipo_especime?: string;
-    lateralidade?: string;
-
-    // Config
-    quantidade_frascos?: string;
-    linfonodo?: boolean;
-
-    medida_completa?: string;
-    medida_linfonodo?: string;
-
-    // Nodules List (Replacing single nodule fields)
-    nodules: NoduleData[];
-
-    // Cassettes & Representation
-    representacao?: string[];
-    cassettes: any[];
-
-    // Description
-    aspecto_macroscopico?: string;
-    consistencia?: string;
-    superficie_corte?: string;
-    margens?: string;
-
-    // Analysis
-    microscopia?: string;
-    diagnostico?: string;
-    nota?: string;
-    referencias?: string;
-
-    // Signed
-    is_signed?: boolean;
-    signed_by?: string;
-    is_validated?: boolean;
-
-    // Specifics
-    pele?: string;
-    tecido_adiposo?: string;
-
-    observacoes?: string;
-
     jars: any[];
+    cassettes: any[];
 }
 
 interface MammaryFormProps {
     onSaveSuccess?: (record?: any) => void;
 }
 
-const PASTEL_COLORS = [
-    'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100',
-    'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100',
-    'bg-green-50 text-green-700 border-green-200 hover:bg-green-100',
-    'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100',
-    'bg-pink-50 text-pink-700 border-pink-200 hover:bg-pink-100',
-    'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100',
-];
-
-const getOptionColor = (option: string) => {
-    let hash = 0;
-    for (let i = 0; i < option.length; i++) {
-        hash = option.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const index = Math.abs(hash) % PASTEL_COLORS.length;
-    return PASTEL_COLORS[index];
-};
-
-const SingleSelectGroup = ({ label, options, selected, onChange }: { label: string, options: string[], selected?: string, onChange: (val: string) => void }) => {
-    return (
-        <div className="mb-2">
-            <label className="block text-sm font-medium text-gray-600 mb-2">{label}</label>
-            <div className="flex flex-wrap gap-2">
-                {options.map(option => {
-                    const colorClass = getOptionColor(option);
-                    const isSelected = selected === option;
-
-                    return (
-                        <button
-                            key={option}
-                            type="button"
-                            onClick={() => onChange(option)}
-                            className={`text-sm px-3 py-1.5 rounded-md border-2 transition-all duration-200 font-medium
-                                    ${isSelected
-                                    ? 'bg-gray-800 text-white border-gray-800 shadow-md transform scale-105'
-                                    : `${colorClass} hover:shadow-md hover:-translate-y-0.5 opacity-80 hover:opacity-100`
-                                }`}
-                        >
-                            {option}
-                        </button>
-                    );
-                })}
-            </div>
-        </div>
-    );
-};
-
-const MultiSelectGroup = ({ label, options, selected = [], onChange }: { label: string, options: string[], selected?: string[], onChange: (val: string[]) => void }) => {
-    const toggleOption = (option: string) => {
-        if (selected.includes(option)) {
-            onChange(selected.filter(item => item !== option));
-        } else {
-            onChange([...selected, option]);
-        }
-    };
-
-    return (
-        <div className="mb-2">
-            <label className="block text-sm font-medium text-gray-600 mb-2">{label}</label>
-            <div className="flex flex-wrap gap-2">
-                {options.map(option => {
-                    const colorClass = getOptionColor(option);
-                    const isSelected = selected.includes(option);
-
-                    return (
-                        <button
-                            key={option}
-                            type="button"
-                            onClick={() => toggleOption(option)}
-                            className={`text-sm px-3 py-1.5 rounded-md border-2 transition-all duration-200 font-medium
-                                    ${isSelected
-                                    ? 'bg-gray-800 text-white border-gray-800 shadow-md transform scale-105'
-                                    : `${colorClass} hover:shadow-md hover:-translate-y-0.5 opacity-80 hover:opacity-100`
-                                }`}
-                        >
-                            {option}
-                        </button>
-                    );
-                })}
-            </div>
-        </div>
-    );
-};
+const createEmptyFragment = (numero: number) => ({
+    numero,
+    caracteristicas: [],
+    aparencia: [],
+    consistencia: [],
+    aspecto_nodulo: [],
+    cor: [],
+    representacao: [],
+    medidas: '',
+    medidas_nodulo: '',
+    observacoes: '',
+    cassettes: []
+});
 
 const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
+    const [savedRecord, setSavedRecord] = useState<any>(null);
 
     const [formData, setFormData] = useState<MammaryFormData>({
         numero_guia: '',
         nome_paciente: '',
         status: 'em_analise',
-        jars: [{ numero: '1', conteudo: '', dimensoes: '', fixador: 'Formol 10%' }],
-        cassettes: [],
-
-        // Initial Nodule
-        nodules: [{
-            id: '1',
+        jars: [{
             numero: '1',
-            localizacao: '',
-            medida: '',
-            aparencia: [],
-            consistencia: [],
-            aspecto: [],
-            cor: []
+            fragments: [createEmptyFragment(1)]
         }],
-
-        representacao: []
+        cassettes: []
     });
 
+    // --- Jar Management ---
     const addJar = () => {
         setFormData({
             ...formData,
             jars: [
                 ...formData.jars,
-                { numero: String(formData.jars.length + 1), conteudo: '', dimensoes: '', fixador: 'Formol 10%' }
+                { numero: String(formData.jars.length + 1), fragments: [] }
             ]
         });
     };
 
-    const addNodule = () => {
-        setFormData(prev => ({
-            ...prev,
-            nodules: [
-                ...prev.nodules,
-                {
-                    id: String(Date.now()),
-                    numero: String(prev.nodules.length + 1),
-                    localizacao: '',
-                    medida: '',
-                    aparencia: [],
-                    consistencia: [],
-                    aspecto: [],
-                    cor: []
-                }
-            ]
-        }));
-    };
-
-    const removeNodule = (index: number) => {
-        const newNodules = formData.nodules.filter((_, i) => i !== index);
-        // Reindex numbers
-        const reindexed = newNodules.map((n, i) => ({ ...n, numero: String(i + 1) }));
-        setFormData({ ...formData, nodules: reindexed });
-    };
-
-    const updateNodule = (index: number, field: keyof NoduleData, value: any) => {
-        const newNodules = [...formData.nodules];
-        newNodules[index] = { ...newNodules[index], [field]: value };
-        setFormData({ ...formData, nodules: newNodules });
-    };
-
-    const updateNoduleArray = (index: number, field: keyof NoduleData, value: string[]) => {
-        const newNodules = [...formData.nodules];
-        // @ts-ignore
-        newNodules[index] = { ...newNodules[index], [field]: value };
-        setFormData({ ...formData, nodules: newNodules });
-    };
-
-    const updateJar = (index: number, field: string, value: string) => {
+    const updateJar = (index: number, jarData: any) => {
         const newJars = [...formData.jars];
-        newJars[index] = { ...newJars[index], [field]: value };
+        newJars[index] = jarData;
         setFormData({ ...formData, jars: newJars });
     };
 
     const removeJar = (index: number) => {
-        const newJars = formData.jars.filter((_, i) => i !== index);
-        const reindexedJars = newJars.map((jar, i) => ({ ...jar, numero: String(i + 1) }));
-        setFormData({ ...formData, jars: reindexedJars });
+        const newJars = formData.jars.filter((_: any, i: number) => i !== index);
+        const reindexed = newJars.map((jar: any, i: number) => ({ ...jar, numero: String(i + 1) }));
+        setFormData({ ...formData, jars: reindexed });
     };
 
-    const updateField = (field: keyof MammaryFormData, value: any) => {
-        setFormData({ ...formData, [field]: value });
+    // --- Fragment Management within Jar ---
+    const handleFragmentCountChange = (jarIndex: number, value: string) => {
+        const count = parseInt(value);
+        if (isNaN(count) || count < 0 || count > 10) return;
+
+        const jar = formData.jars[jarIndex];
+        const currentFragments = jar.fragments || [];
+        let newFragments = [...currentFragments];
+
+        if (count > currentFragments.length) {
+            for (let i = currentFragments.length; i < count; i++) {
+                newFragments.push(createEmptyFragment(i + 1));
+            }
+        } else {
+            newFragments = newFragments.slice(0, count);
+        }
+
+        updateJar(jarIndex, { ...jar, fragments: newFragments });
     };
 
+    const updateFragment = (jarIndex: number, fragIndex: number, fragData: any) => {
+        const jar = formData.jars[jarIndex];
+        const newFragments = [...jar.fragments];
+        newFragments[fragIndex] = fragData;
+        updateJar(jarIndex, { ...jar, fragments: newFragments });
+    };
+
+    const removeFragment = (jarIndex: number, fragIndex: number) => {
+        const jar = formData.jars[jarIndex];
+        const newFragments = jar.fragments.filter((_: any, i: number) => i !== fragIndex);
+        const reindexed = newFragments.map((f: any, i: number) => ({ ...f, numero: i + 1 }));
+        updateJar(jarIndex, { ...jar, fragments: reindexed });
+    };
+
+    // --- Submit ---
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setSuccess(false);
 
         try {
-            let savedRecord;
+            // Prepare payload: serialize fragments into jar conteudo as JSON
+            const payload = {
+                numero_guia: formData.numero_guia,
+                nome_paciente: formData.nome_paciente,
+                status: formData.status,
+                quantidade_frascos: formData.jars.length,
+                jars: formData.jars.map((jar: any) => ({
+                    ...(jar.id ? { id: jar.id } : {}),
+                    numero: jar.numero,
+                    conteudo: JSON.stringify(jar.fragments || []),
+                    dimensoes: '',
+                    fixador: 'Formol 10%'
+                })),
+                // Flatten all cassettes from all fragments for record-level storage
+                cassettes: formData.jars.flatMap((jar: any) =>
+                    (jar.fragments || []).flatMap((frag: any) =>
+                        (frag.cassettes || []).map((c: any) => ({
+                            ...(c.id ? { id: c.id } : {}),
+                            codigo: c.codigo,
+                            numero_sequencial: c.numero_sequencial || 0
+                        }))
+                    )
+                )
+            };
+
+            let result: any;
             if (formData.id) {
-                const response = await api.put(`/api/mamaria/${formData.id}`, formData);
-                savedRecord = response.data;
-                setSuccess(true);
+                const response = await api.put(`/api/mamaria/${formData.id}`, payload);
+                result = response.data;
             } else {
-                const response = await api.post('/api/mamaria', formData);
-                savedRecord = response.data;
-                setFormData({ ...formData, id: savedRecord.id });
-                setSuccess(true);
+                const response = await api.post('/api/mamaria', payload);
+                result = response.data;
+                setFormData(prev => ({ ...prev, id: result.id }));
             }
 
-            // Auto open modal on save
+            setSuccess(true);
+            // Store the full form data for the report modal (with fragments)
+            setSavedRecord({ ...formData, id: result.id || formData.id });
+
             setTimeout(() => {
                 setShowReportModal(true);
             }, 100);
@@ -279,485 +166,200 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
         }
     };
 
+    // --- Mock Data ---
     const fillWithMockData = () => {
         const randomId = Math.floor(Math.random() * 10000);
         setFormData({
             ...formData,
-            numero_guia: `TESTE-${randomId}/24`,
+            numero_guia: `${randomId}`,
             nome_paciente: 'Bolinha',
-
-            // New Fields
-            quantidade_frascos: '2',
-            linfonodo: true,
-
-            tipo_especime: 'Mastectomia Total Unilateral',
-            lateralidade: 'Esquerda',
-
-            medida_completa: '15,0 x 8,0 x 4,0',
-            medida_linfonodo: '1,5 x 1,0 x 0,5',
-
-            nodules: [
+            jars: [
                 {
-                    id: '1',
                     numero: '1',
-                    localizacao: 'Mamas inguinais',
-                    medida: '2,5 x 2,0 x 1,5',
-                    aparencia: ['Elevado/Séssil', 'Ulcerado'],
-                    consistencia: ['Firme', 'Duro'],
-                    aspecto: ['Sólido', 'Lobulado'],
-                    cor: ['Bege', 'Branco']
+                    fragments: [
+                        {
+                            numero: 1,
+                            caracteristicas: ['Cutâneo'],
+                            aparencia: ['Elevado/Séssil', 'Ulcerado'],
+                            consistencia: ['Firme'],
+                            aspecto_nodulo: ['Sólido', 'Lobulado'],
+                            cor: ['Bege', 'Branco'],
+                            representacao: ['Fragmento'],
+                            medidas: '2,5 x 1,5 x 0,8 cm',
+                            medidas_nodulo: '1,2 x 0,8 cm',
+                            observacoes: '',
+                            cassettes: [
+                                { codigo: `${randomId}-A`, numero_sequencial: 1 }
+                            ]
+                        },
+                        {
+                            numero: 2,
+                            caracteristicas: ['Subcutâneo'],
+                            aparencia: ['Irregular'],
+                            consistencia: ['Duro'],
+                            aspecto_nodulo: ['Cístico (Fluído)'],
+                            cor: ['Marrom'],
+                            representacao: ['Todo Material incluído'],
+                            medidas: '1,0 x 0,8 x 0,5 cm',
+                            medidas_nodulo: '0,5 x 0,3 cm',
+                            observacoes: '',
+                            cassettes: [
+                                { codigo: `${randomId}-B`, numero_sequencial: 2 }
+                            ]
+                        }
+                    ]
                 },
                 {
-                    id: '2',
                     numero: '2',
-                    localizacao: 'Mama abdominal',
-                    medida: '1,0 x 1,0 x 0,5',
-                    aparencia: ['Irregular'],
-                    consistencia: ['Firme'],
-                    aspecto: ['Sólido'],
-                    cor: ['Branco']
+                    fragments: [
+                        {
+                            numero: 1,
+                            caracteristicas: ['Nodulectomia'],
+                            aparencia: ['Alopécico'],
+                            consistencia: ['Macio'],
+                            aspecto_nodulo: ['Friável'],
+                            cor: ['Preto'],
+                            representacao: ['Todo Material incluído'],
+                            medidas: '3,0 x 2,0 x 1,5 cm',
+                            medidas_nodulo: '2,0 x 1,5 cm',
+                            observacoes: 'Material recebido em formol 10%.',
+                            cassettes: [
+                                { codigo: `${randomId}-C`, numero_sequencial: 3 }
+                            ]
+                        }
+                    ]
                 }
             ],
-
-            aspecto_macroscopico: 'Segmento cutâneo com relevo irregular e área ulcerada central de 2,0 cm.',
-            consistencia: 'Firme e elástica',
-            superficie_corte: 'Superfície de corte brancacenta com áreas císticas e focos de hemorragia.',
-            margens: 'Livres macroscopicamente, distando 0,5 cm da lesão.',
-            pele: 'Ulcerada na região central.',
-            tecido_adiposo: 'Amarelo e lobulado, sem sinais de invasão macroscópica.',
-
-            representacao: ['Fragmento', 'Todo Material incluído'],
-
-            observacoes: 'Material enviado em formol 10%.',
-            jars: [
-                { numero: '1', conteudo: 'Nódulo Principal + Margens', dimensoes: '3,0 x 2,0 x 1,0', fixador: 'Formol 10%' },
-                { numero: '2', conteudo: 'Linfonodo Inguinal', dimensoes: '1,0 x 0,5 x 0,5', fixador: 'Formol 10%' }
-            ],
-            cassettes: [
-                { numero: '1', conteudo: 'Nódulo', fragmentos: '2' },
-                { numero: '2', conteudo: 'Margem Cranial', fragmentos: '1' },
-                { numero: '3', conteudo: 'Margem Caudal', fragmentos: '1' },
-                { numero: '4', conteudo: 'Linfonodo', fragmentos: '1' },
-                { numero: '5', conteudo: 'Pele (Úlcera)', fragmentos: '1' }
-            ]
+            cassettes: []
         });
     };
 
-    const inputClass = "w-full border-2 border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 px-3 py-2";
+    const totalFragments = formData.jars.reduce((acc: number, jar: any) => acc + (jar.fragments?.length || 0), 0);
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-8 pb-32">
+        <form onSubmit={handleSubmit} className="space-y-6 pb-32">
 
-            {/* Header / Basic Info */}
+            {/* Header - Basic Data */}
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
                     <FlaskConical size={20} className="text-pink-500" />
-                    Dados do Exame
+                    Dados Básicos
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Número da Guia</label>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Número da Guia *</label>
                         <input
                             required
                             type="text"
-                            className={inputClass}
+                            className="w-full border-2 border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 px-3 py-2"
                             value={formData.numero_guia}
-                            onChange={(e) => updateField('numero_guia', e.target.value)}
+                            onChange={(e) => setFormData({ ...formData, numero_guia: e.target.value })}
                             placeholder="Ex: 12345/23"
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Nome do Paciente</label>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">Nome do Paciente *</label>
                         <input
                             required
                             type="text"
-                            className={inputClass}
+                            className="w-full border-2 border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 px-3 py-2"
                             value={formData.nome_paciente}
-                            onChange={(e) => updateField('nome_paciente', e.target.value)}
-                            placeholder="Nome completo do animal"
-                        />
-                    </div>
-                </div>
-
-                {/* New Exam Data Fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-4 border-t border-gray-100">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Quantidade de Frascos</label>
-                        <input
-                            type="number"
-                            className={inputClass}
-                            value={formData.quantidade_frascos || ''}
-                            onChange={(e) => updateField('quantidade_frascos', e.target.value)}
-                            placeholder="Qtd"
-                        />
-                    </div>
-                    <div className="flex items-center gap-2 mt-6">
-                        <input
-                            type="checkbox"
-                            checked={formData.linfonodo || false}
-                            onChange={(e) => updateField('linfonodo', e.target.checked)}
-                            className="w-4 h-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500"
-                        />
-                        <label className="text-sm font-medium text-gray-600">Linfonodo</label>
-                    </div>
-                </div>
-            </div>
-
-            {/* Vertical Stack Layout */}
-
-            {/* SECTION 1: Specimen Data & Measurements */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 border-l-4 border-l-blue-500">
-                <h4 className="text-lg font-semibold text-gray-800 mb-4">Dados do Espécime & Medidas</h4>
-
-                <div className="mb-6">
-                    <SingleSelectGroup
-                        label="Tipo de Espécime"
-                        options={[
-                            "Mastectomia Regional",
-                            "Mastectomia Total Unilateral",
-                            "Mastectomia Total Bilateral",
-                            "Nodulectomia",
-                            "Fragmento de Biópsia"
-                        ]}
-                        selected={formData.tipo_especime}
-                        onChange={(val) => updateField('tipo_especime', val)}
-                    />
-                </div>
-
-                <div className="mb-6">
-                    <SingleSelectGroup
-                        label="Lateralidade"
-                        options={['Direita', 'Esquerda', 'Bilateral', 'Não Informado']}
-                        selected={formData.lateralidade}
-                        onChange={(val) => updateField('lateralidade', val)}
-                    />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Medida do Espécime (Completa) *</label>
-                        <input
-                            type="text"
-                            className={inputClass}
-                            value={formData.medida_completa || ''}
-                            onChange={(e) => updateField('medida_completa', e.target.value)}
-                            placeholder="00x00x00 cm"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Medida do Linfonodo</label>
-                        <input
-                            type="text"
-                            className={inputClass}
-                            value={formData.medida_linfonodo || ''}
-                            onChange={(e) => updateField('medida_linfonodo', e.target.value)}
-                            placeholder="00x00x00 cm"
-                        />
-                    </div>
-                </div>
-
-                {/* Nodules List */}
-                <div className="mt-8 pt-6 border-t border-gray-200">
-                    <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center justify-between">
-                        <span>Nódulos / Lesões</span>
-                        <button
-                            type="button"
-                            onClick={addNodule}
-                            className="bg-pink-50 text-pink-700 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-pink-100 flex items-center gap-1 transition-colors"
-                        >
-                            <Plus size={16} /> Adicionar Nódulo
-                        </button>
-                    </h4>
-
-                    <div className="space-y-6">
-                        {formData.nodules.map((nodule, index) => (
-                            <div key={nodule.id} className="bg-gray-50 border border-gray-200 rounded-lg p-5 relative">
-                                {formData.nodules.length > 1 && (
-                                    <button
-                                        type="button"
-                                        onClick={() => removeNodule(index)}
-                                        className="absolute top-3 right-3 text-gray-400 hover:text-red-500 transition-colors"
-                                        title="Remover Nódulo"
-                                    >
-                                        <X size={18} />
-                                    </button>
-                                )}
-
-                                <div className="mb-4 flex items-center gap-2">
-                                    <span className="bg-pink-100 text-pink-800 text-xs font-bold px-2 py-1 rounded uppercase tracking-wider">
-                                        Nódulo {nodule.numero}
-                                    </span>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-600 mb-1">Localização</label>
-                                        <input
-                                            type="text"
-                                            className={inputClass}
-                                            value={nodule.localizacao}
-                                            onChange={(e) => updateNodule(index, 'localizacao', e.target.value)}
-                                            placeholder="Ex: M1, Inguinal Esquerda..."
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-600 mb-1">Medidas do Nódulo</label>
-                                        <input
-                                            type="text"
-                                            className={inputClass}
-                                            value={nodule.medida}
-                                            onChange={(e) => updateNodule(index, 'medida', e.target.value)}
-                                            placeholder="Ex: 2,5 x 2,0 x 1,5 cm"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                                    <div>
-                                        <MultiSelectGroup
-                                            label="Aparência"
-                                            options={['Irregular', 'Alopécico', 'Elevado/Séssil', 'Ulcerado', 'Não Ulcerado', 'Verrucoso']}
-                                            selected={nodule.aparencia}
-                                            onChange={(val) => updateNoduleArray(index, 'aparencia', val)}
-                                        />
-                                    </div>
-                                    <div>
-                                        <MultiSelectGroup
-                                            label="Consistência"
-                                            options={['Macio', 'Firme', 'Duro', 'Cístico (Fluído)', 'Untuoso', 'Fibroelástico']}
-                                            selected={nodule.consistencia}
-                                            onChange={(val) => updateNoduleArray(index, 'consistencia', val)}
-                                        />
-                                    </div>
-                                    <div>
-                                        <MultiSelectGroup
-                                            label="Aspecto ao Corte"
-                                            options={['Cístico (Fluído)', 'Sólido', 'Lobulado', 'Friável', 'Cavitário']}
-                                            selected={nodule.aspecto}
-                                            onChange={(val) => updateNoduleArray(index, 'aspecto', val)}
-                                        />
-                                    </div>
-                                    <div>
-                                        <MultiSelectGroup
-                                            label="Cor"
-                                            options={['Branco', 'Bege', 'Marrom', 'Preto']}
-                                            selected={nodule.cor}
-                                            onChange={(val) => updateNoduleArray(index, 'cor', val)}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Representation & Cassettes */}
-                <div className="mt-8 pt-6 border-t border-gray-200">
-                    <label className="block text-lg font-semibold text-gray-800 mb-3">Representação</label>
-                    <div className="flex gap-4 mb-4">
-                        <label className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                checked={formData.representacao?.includes('Fragmento') || false}
-                                onChange={(e) => {
-                                    const val = 'Fragmento';
-                                    const current = formData.representacao || [];
-                                    updateField('representacao', e.target.checked
-                                        ? [...current, val]
-                                        : current.filter(i => i !== val));
-                                }}
-                                className="w-4 h-4 text-purple-600 rounded border-gray-300"
-                            />
-                            <span className="text-gray-700">Fragmento</span>
-                        </label>
-                        <label className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                checked={formData.representacao?.includes('Todo Material incluído') || false}
-                                onChange={(e) => {
-                                    const val = 'Todo Material incluído';
-                                    const current = formData.representacao || [];
-                                    updateField('representacao', e.target.checked
-                                        ? [...current, val]
-                                        : current.filter(i => i !== val));
-                                }}
-                                className="w-4 h-4 text-purple-600 rounded border-gray-300"
-                            />
-                            <span className="text-gray-700">Todo Material incluído</span>
-                        </label>
-                    </div>
-
-                    <CassetteList
-                        cassettes={formData.cassettes || []}
-                        onUpdate={(val) => updateField('cassettes', val)}
-                    />
-                </div>
-            </div>
-
-            {/* SECTION 2: Macroscopic Description */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 border-l-4 border-l-purple-500">
-                <h4 className="text-lg font-semibold text-gray-800 mb-4">Descrição Macroscópica</h4>
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Aspecto Macroscópico Geral</label>
-                        <textarea
-                            rows={3}
-                            className={inputClass}
-                            value={formData.aspecto_macroscopico || ''}
-                            onChange={(e) => updateField('aspecto_macroscopico', e.target.value)}
-                            placeholder="Descreva a forma, cor externa, presença de pele..."
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Consistência</label>
-                        <input
-                            type="text"
-                            className={inputClass}
-                            value={formData.consistencia || ''}
-                            onChange={(e) => updateField('consistencia', e.target.value)}
-                            placeholder="Ex: Firme, elástica, duro-elástica..."
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Ao Corte (Superfície)</label>
-                        <textarea
-                            rows={3}
-                            className={inputClass}
-                            value={formData.superficie_corte || ''}
-                            onChange={(e) => updateField('superficie_corte', e.target.value)}
-                            placeholder="Cor, textura, presença de nódulos, cistos, áreas necróticas..."
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Margens Cirúrgicas</label>
-                        <textarea
-                            rows={2}
-                            className={inputClass}
-                            value={formData.margens || ''}
-                            onChange={(e) => updateField('margens', e.target.value)}
-                            placeholder="Avaliação macroscópica das margens..."
+                            onChange={(e) => setFormData({ ...formData, nome_paciente: e.target.value })}
+                            placeholder="Nome do animal"
                         />
                     </div>
                 </div>
             </div>
 
-            {/* SECTION 3: Specific Structures */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 border-l-4 border-l-pink-500">
-                <h4 className="text-lg font-semibold text-gray-800 mb-4">Estruturas Específicas</h4>
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Pele</label>
-                        <textarea
-                            rows={2}
-                            className={inputClass}
-                            value={formData.pele || ''}
-                            onChange={(e) => updateField('pele', e.target.value)}
-                            placeholder="Íntegra, ulcerada, retraída, invadida..."
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Tecido Adiposo Adjacente</label>
-                        <textarea
-                            rows={2}
-                            className={inputClass}
-                            value={formData.tecido_adiposo || ''}
-                            onChange={(e) => updateField('tecido_adiposo', e.target.value)}
-                            placeholder="Aspecto, invasão..."
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* SECTION 4: Jars */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 border-l-4 border-l-emerald-500">
-                <h4 className="text-lg font-semibold text-gray-800 mb-4">Frascos Gerados</h4>
-                <div className="space-y-4">
-                    {formData.jars.length === 0 ? (
-                        <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-gray-500">
-                            Nenhum frasco adicionado.
-                            <button
-                                type="button"
-                                onClick={addJar}
-                                className="block mx-auto mt-2 text-pink-600 hover:underline"
-                            >
-                                Adicionar agora
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 gap-4">
-                            {formData.jars.map((jar, index) => (
-                                <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-200 relative">
-                                    <button
-                                        type="button"
-                                        onClick={() => removeJar(index)}
-                                        className="absolute top-2 right-2 text-gray-300 hover:text-red-500 transition-colors"
-                                    >
-                                        <X size={18} />
-                                    </button>
-
-                                    <h5 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                                        <div className="bg-pink-100 text-pink-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">
-                                            {jar.numero}
-                                        </div>
-                                        Frasco {jar.numero}
-                                    </h5>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="md:col-span-2">
-                                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Conteúdo</label>
-                                            <input
-                                                type="text"
-                                                className={inputClass}
-                                                value={jar.conteudo}
-                                                onChange={(e) => updateJar(index, 'conteudo', e.target.value)}
-                                                placeholder="Ex: Nódulo principal, Margem cranial..."
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Dimensões (cm)</label>
-                                            <input
-                                                type="text"
-                                                className={inputClass}
-                                                value={jar.dimensoes}
-                                                onChange={(e) => updateJar(index, 'dimensoes', e.target.value)}
-                                                placeholder="Ex: 2,0 x 1,0 x 0,5"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Fixador</label>
-                                            <input
-                                                type="text"
-                                                className={inputClass}
-                                                value={jar.fixador}
-                                                onChange={(e) => updateJar(index, 'fixador', e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
+            {/* Jars Section */}
+            <div>
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <TestTube size={20} className="text-pink-500" />
+                        Frascos e Fragmentos
+                        <span className="text-sm font-normal text-gray-500">
+                            ({formData.jars.length} frasco{formData.jars.length !== 1 ? 's' : ''}, {totalFragments} fragmento{totalFragments !== 1 ? 's' : ''})
+                        </span>
+                    </h3>
                     <button
                         type="button"
                         onClick={addJar}
-                        className="flex items-center gap-2 bg-white text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors font-medium text-sm border-2 border-gray-300 w-full justify-center border-dashed"
+                        className="flex items-center gap-2 bg-pink-50 text-pink-700 px-4 py-2 rounded-md hover:bg-pink-100 transition-colors font-medium text-sm border border-pink-200"
                     >
-                        <Plus size={18} /> Adicionar Outro Frasco
+                        <Plus size={18} /> Adicionar Frasco
                     </button>
                 </div>
-            </div>
 
-            {/* SECTION 5: Observations */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 border-l-4 border-l-yellow-500">
-                <label className="block text-lg font-semibold text-gray-800 mb-2">Observações Gerais</label>
-                <textarea
-                    rows={5}
-                    className={inputClass}
-                    value={formData.observacoes || ''}
-                    onChange={(e) => updateField('observacoes', e.target.value)}
-                    placeholder="Informações adicionais relevantes..."
-                />
+                {formData.jars.map((jar: any, jarIndex: number) => (
+                    <div key={jarIndex} className="bg-white rounded-xl border border-gray-200 shadow-sm mb-6 overflow-hidden">
+                        {/* Jar Header */}
+                        <div className="bg-gray-50 px-5 py-4 flex flex-col md:flex-row justify-between items-center gap-4 border-b border-gray-200">
+                            <div className="flex items-center gap-4 w-full md:w-auto">
+                                <div className="bg-pink-100 p-2 rounded-full text-pink-600 shadow-sm">
+                                    <TestTube size={20} />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm font-bold text-gray-700">Frasco {jar.numero}</span>
+                                    <span className="text-xs text-gray-400">
+                                        Fragmentos: {jar.fragments?.length || 0}/10
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 bg-white px-4 py-1.5 rounded-lg border border-gray-200 shadow-sm">
+                                <span className="text-sm font-medium text-gray-600">Quantos fragmentos neste frasco? (máximo 10)</span>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="10"
+                                    value={jar.fragments?.length || 0}
+                                    onChange={(e) => handleFragmentCountChange(jarIndex, e.target.value)}
+                                    className="w-16 px-2 py-1 text-center font-bold text-pink-700 border-gray-300 rounded focus:ring-pink-500 focus:border-pink-500"
+                                />
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => removeJar(jarIndex)}
+                                className="text-gray-400 hover:text-red-600 transition-colors p-2 rounded-full hover:bg-red-50"
+                                title="Remover Frasco"
+                            >
+                                <Trash2 size={18} />
+                            </button>
+                        </div>
+
+                        {/* Fragments */}
+                        <div className="p-5 bg-gray-50/30">
+                            {(jar.fragments?.length || 0) === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-10 text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">
+                                    <AlertCircle size={32} className="mb-2 opacity-50" />
+                                    <p className="text-sm font-medium">Defina a quantidade de fragmentos acima para começar.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {jar.fragments.map((fragment: any, fragIndex: number) => (
+                                        <MammaryFragmentSection
+                                            key={fragIndex}
+                                            index={fragIndex}
+                                            fragment={fragment}
+                                            baseCode={formData.numero_guia || '000'}
+                                            onUpdate={(data) => updateFragment(jarIndex, fragIndex, data)}
+                                            onRemove={() => removeFragment(jarIndex, fragIndex)}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ))}
+
+                <button
+                    type="button"
+                    onClick={addJar}
+                    className="flex items-center gap-2 bg-white text-gray-700 px-4 py-3 rounded-md hover:bg-gray-50 transition-colors font-medium text-sm border-2 border-gray-300 w-full justify-center border-dashed"
+                >
+                    <Plus size={18} /> Adicionar outro Frasco
+                </button>
             </div>
 
             {/* Footer Actions */}
@@ -768,7 +370,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                     disabled={!formData.id}
                     className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2.5 rounded-md hover:bg-purple-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-md mr-auto"
                 >
-                    <Wand2 size={18} /> Gerar Análise (IA)
+                    <Wand2 size={18} /> Relatórios
                 </button>
 
                 <button
@@ -790,11 +392,16 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                     className="flex items-center gap-2 bg-green-600 text-white px-6 py-2.5 rounded-md hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                 >
                     {loading ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-                    {loading ? 'Salvando...' : 'Salvar Mamária'}
+                    {loading ? 'Salvando...' : 'Salvar Registro'}
                 </button>
             </div>
 
-            {showReportModal && <MammaryReportModal record={formData} onClose={() => setShowReportModal(false)} />}
+            {showReportModal && (
+                <MammaryReportModal
+                    record={savedRecord || formData}
+                    onClose={() => setShowReportModal(false)}
+                />
+            )}
         </form>
     );
 };
