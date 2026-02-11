@@ -25,7 +25,7 @@ export const categorizeInput = async (input: string): Promise<{ category: string
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini", // Cost-effective model
+      model: "gpt-4.1-mini", // Cost-effective model
       messages: [
         {
           role: "system",
@@ -94,7 +94,7 @@ const generateForJar = async (patientInfo: any, jar: any): Promise<any> => {
         `;
 
   const response = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4.1-mini",
     messages: [
       { role: "system", content: "Você é um especialista em Patologia Veterinária. Retorne apenas JSON válido." },
       { role: "user", content: prompt }
@@ -189,7 +189,7 @@ export const generateMammaryAnalysis = async (record: any): Promise<any> => {
         `;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-mini",
       messages: [
         { role: "system", content: "Você é um especialista em Patologia Veterinária (Mamária). Retorne apenas JSON válido." },
         { role: "user", content: prompt }
