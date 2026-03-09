@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Microscope, LayoutDashboard, Plus, Search, FileText, FlaskConical, Calendar } from 'lucide-react';
-import api from '../services/api';
+import { useState } from 'react';
+import { LayoutDashboard, Plus, Search, FileText, FlaskConical } from 'lucide-react';
 import MacroscopyForm from '../components/macroscopy/MacroscopyForm';
 import RecentActivities from '../components/macroscopy/RecentActivities';
 import MacroscopyReportModal from '../components/macroscopy/MacroscopyReportModal';
@@ -10,42 +9,7 @@ const Macroscopy = () => {
     const [viewMode, setViewMode] = useState<'dashboard' | 'create'>('dashboard');
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [selectedReportExam, setSelectedReportExam] = useState<any | null>(null);
-    const [stats, setStats] = useState({
-        total: 0,
-        frascos: 0,
-        hoje: 0,
-        analise: 0
-    });
 
-    // Fetch stats on mount and refresh
-    useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                // Fetching from existing macroscopy endpoint
-                // Note: We might need to adjust the endpoint if it differs from mammary
-                const response = await api.get('/macroscopy');
-                const records = response.data;
-
-                const today = new Date().toISOString().split('T')[0];
-                const todayCount = records.filter((r: any) => r.created_at?.startsWith(today)).length;
-                const analiseCount = records.filter((r: any) => r.status === 'em_analise').length;
-                // Assuming macroscopy records also have jars/frascos count logic or we count them differently
-                // For general macroscopy, if it follows the old structure, we might need to check how to count frascos.
-                // If it's the old structure, it might vary. Let's do a safe reduce.
-                const totalFrascos = records.reduce((acc: number, r: any) => acc + (r.jars?.length || 0), 0);
-
-                setStats({
-                    total: records.length,
-                    frascos: totalFrascos,
-                    hoje: todayCount,
-                    analise: analiseCount
-                });
-            } catch (error) {
-                console.error("Error loading stats", error);
-            }
-        };
-        fetchStats();
-    }, [refreshTrigger]);
 
     const handleSaveSuccess = (record?: any) => {
         setRefreshTrigger(prev => prev + 1);
@@ -88,66 +52,9 @@ const Macroscopy = () => {
                         <p className="text-sm text-gray-500 font-medium">Análise Histopatológica</p>
                     </div>
                 </div>
-                <div className="flex gap-3">
-                    <button className="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-md font-medium text-sm hover:bg-blue-100 transition-colors">
-                        <LayoutDashboard size={16} /> Dashboard
-                    </button>
-                    <button
-                        onClick={() => setViewMode('create')}
-                        className="flex items-center gap-2 text-gray-600 px-4 py-2 rounded-md font-medium text-sm hover:bg-gray-50 transition-colors"
-                    >
-                        <Plus size={16} /> Novo
-                    </button>
-                    <button
-                        onClick={() => document.getElementById('recent-activities')?.scrollIntoView({ behavior: 'smooth' })}
-                        className="flex items-center gap-2 text-gray-600 px-4 py-2 rounded-md font-medium text-sm hover:bg-gray-50 transition-colors">
-                        <Search size={16} /> Registros
-                    </button>
-                    <button className="flex items-center gap-2 text-gray-600 px-4 py-2 rounded-md font-medium text-sm hover:bg-gray-50 transition-colors">
-                        <FileText size={16} /> Relatórios
-                    </button>
-                </div>
+
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-
-                {/* Card 1: Total Registros (Blue) */}
-                <div className="bg-gradient-to-r from-blue-500 to-cyan-400 rounded-xl p-6 text-white shadow-lg relative overflow-hidden group">
-                    <div className="relative z-10">
-                        <p className="text-blue-100 text-sm font-medium mb-1">Total de Registros</p>
-                        <h3 className="text-4xl font-bold">{stats.total}</h3>
-                    </div>
-                    <FileText className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 group-hover:scale-110 transition-transform duration-300" size={48} />
-                </div>
-
-                {/* Card 2: Total Frascos (Green) */}
-                <div className="bg-gradient-to-r from-emerald-500 to-teal-400 rounded-xl p-6 text-white shadow-lg relative overflow-hidden group">
-                    <div className="relative z-10">
-                        <p className="text-emerald-100 text-sm font-medium mb-1">Total de Frascos</p>
-                        <h3 className="text-4xl font-bold">{stats.frascos}</h3>
-                    </div>
-                    <FlaskConical className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 group-hover:scale-110 transition-transform duration-300" size={48} />
-                </div>
-
-                {/* Card 3: Hoje (Purple) */}
-                <div className="bg-gradient-to-r from-purple-500 to-fuchsia-400 rounded-xl p-6 text-white shadow-lg relative overflow-hidden group">
-                    <div className="relative z-10">
-                        <p className="text-purple-100 text-sm font-medium mb-1">Hoje</p>
-                        <h3 className="text-4xl font-bold">{stats.hoje}</h3>
-                    </div>
-                    <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 group-hover:scale-110 transition-transform duration-300" size={48} />
-                </div>
-
-                {/* Card 4: Em Análise (Orange) */}
-                <div className="bg-gradient-to-r from-orange-500 to-red-400 rounded-xl p-6 text-white shadow-lg relative overflow-hidden group">
-                    <div className="relative z-10">
-                        <p className="text-orange-100 text-sm font-medium mb-1">Em Análise</p>
-                        <h3 className="text-4xl font-bold">{stats.analise}</h3>
-                    </div>
-                    <Microscope className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 group-hover:scale-110 transition-transform duration-300" size={48} />
-                </div>
-            </div>
 
             {/* Quick Actions */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
