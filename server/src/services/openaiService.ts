@@ -84,6 +84,10 @@ const generateForJar = async (patientInfo: any, jar: any): Promise<any> => {
         MATERIAL PARA ANÁLISE (FRASCO ${jar.numero}):
         ${JSON.stringify(jarContext, null, 2)}
         
+        INFORMAÇÕES ADICIONAIS:
+        - Inclua quaisquer informações presentes no campo "observacoes" na sua descrição macroscópica se existir.
+        - Se foram especificados blocos específicos ("consistencia_blocos", "cor_blocos"), liste em quais blocos/cassetes as consistências ou cores foram encontradas de forma legível.
+        
         Siga ESTRITAMENTE este modelo JSON de saída. Não retorne markdown, apenas JSON.
         
         {

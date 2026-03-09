@@ -11,8 +11,8 @@ interface FragmentSectionProps {
 // Predefined Options (Mocking v14)
 // Predefined Options (Mocking v14)
 const OPTIONS = {
-    caracteristicas: ['Cutâneo', 'Não Cutâneo', 'Subcutâneo', 'Nodulectomia', 'Mastectomia', 'Amputação'],
-    aparencia: ['Irregular', 'Regular', 'Alopécico', 'Ulcerado', 'Não ulcerado', 'Elevado/Séssil', 'Pedunculado'],
+    caracteristicas: ['Cutâneo', 'Não Cutâneo', 'Subcutâneo', 'Nodulectomia', 'Órgão', 'Amputação'],
+    aparencia: ['Irregular', 'Regular', 'Alopécico', 'Ulcerado', 'Não ulcerado', 'Elevado/Séssil', 'Pedunculado', 'Verrucoso'],
     consistencia: ['Macio', 'Firme', 'Duro', 'Elástico', 'Friável', 'Cístico (Fluído)', 'Untuoso', 'Fibroelástico'],
     aspecto_nodulo: ['Sólido', 'Cístico', 'Lobulado', 'Homogêneo', 'Heterogêneo', 'Hemorrágico', 'Necrótico'],
     cor: ['Branco', 'Bege', 'Amarelo', 'Marrom', 'Preto', 'Acastanhado'],
@@ -140,7 +140,8 @@ const FragmentSection = ({ index, fragment, onUpdate, onRemove }: FragmentSectio
         representacao: fragment.representacao || [],
         cassettes: fragment.cassettes || [],
         consistencia_blocos: fragment.consistencia_blocos || {},
-        cor_blocos: fragment.cor_blocos || {}
+        cor_blocos: fragment.cor_blocos || {},
+        orgao_nome: fragment.orgao_nome || ''
     };
 
     const updateField = (field: string, value: any) => {
@@ -174,53 +175,7 @@ const FragmentSection = ({ index, fragment, onUpdate, onRemove }: FragmentSectio
             {/* Vertical Layout as requested */}
             <div className="space-y-6 pt-2">
 
-                {/* 1. Características */}
-                <MultiSelectGroup
-                    label="Características"
-                    options={OPTIONS.caracteristicas}
-                    selected={safeFragment.caracteristicas}
-                    onChange={(v) => updateField('caracteristicas', v)}
-                />
-
-                {/* 2. Consistência */}
-                <MultiSelectGroup
-                    label="Consistência"
-                    options={OPTIONS.consistencia}
-                    selected={safeFragment.consistencia}
-                    onChange={(v) => updateField('consistencia', v)}
-                    showBlockInput={true}
-                    blocks={safeFragment.consistencia_blocos}
-                    onBlockChange={(opt, val) => updateBlock('consistencia', opt, val)}
-                />
-
-                {/* 3. Cor */}
-                <MultiSelectGroup
-                    label="Cor"
-                    options={OPTIONS.cor}
-                    selected={safeFragment.cor}
-                    onChange={(v) => updateField('cor', v)}
-                    showBlockInput={true}
-                    blocks={safeFragment.cor_blocos}
-                    onBlockChange={(opt, val) => updateBlock('cor', opt, val)}
-                />
-
-                {/* 4. Aparência (Externo) */}
-                <MultiSelectGroup
-                    label="Aparência (Externo)"
-                    options={OPTIONS.aparencia}
-                    selected={safeFragment.aparencia}
-                    onChange={(v) => updateField('aparencia', v)}
-                />
-
-                {/* 5. Ao Corte (Nódulo) */}
-                <MultiSelectGroup
-                    label="Ao Corte (Nódulo)"
-                    options={OPTIONS.aspecto_nodulo}
-                    selected={safeFragment.aspecto_nodulo}
-                    onChange={(v) => updateField('aspecto_nodulo', v)}
-                />
-
-                {/* 6. Medidas do Fragmento */}
+                {/* 1. Medidas do Fragmento */}
                 <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Medidas do Fragmento</label>
                     <input
@@ -232,13 +187,7 @@ const FragmentSection = ({ index, fragment, onUpdate, onRemove }: FragmentSectio
                     />
                 </div>
 
-                {/* (Optional/Extra) Medidas do Nódulo - Keeping it as it wasn't explicitly asked to remove, but not in list. 
-                    Wait, "Ao Corte (Nódulo)" was asked. "Medidas do Nódulo" is usually paired. I'll put it after Medidas do Fragmento as a safe bet or omit if strictly following list.
-                    User list: "Medidas do Fragmento", "Representação".
-                    I will keep Medidas do Nódulo separate or remove? The user was specific. 
-                    "Medidas do Fragmento" is item 6. "Representação" is item 7.
-                    I will append Medidas do Nódulo next to Medidas do Fragmento to avoid losing data capability, but logically placed.
-                */}
+                {/* 2. Medidas do Nódulo */}
                 <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Medidas do Nódulo</label>
                     <input
@@ -249,6 +198,66 @@ const FragmentSection = ({ index, fragment, onUpdate, onRemove }: FragmentSectio
                         onChange={(e) => updateField('medidas_nodulo', e.target.value)}
                     />
                 </div>
+
+                {/* 3. Características */}
+                <div>
+                    <MultiSelectGroup
+                        label="Características"
+                        options={OPTIONS.caracteristicas}
+                        selected={safeFragment.caracteristicas}
+                        onChange={(v) => updateField('caracteristicas', v)}
+                    />
+                    {safeFragment.caracteristicas.includes('Órgão') && (
+                        <div className="mt-2 pl-2 border-l-2 border-purple-200">
+                            <label className="block text-xs font-medium text-gray-500 mb-1">Qual órgão?</label>
+                            <input
+                                type="text"
+                                className="w-1/2 text-sm border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                                placeholder="Ex: Baço, Testículo, Linfonodo..."
+                                value={safeFragment.orgao_nome || ''}
+                                onChange={(e) => updateField('orgao_nome', e.target.value)}
+                            />
+                        </div>
+                    )}
+                </div>
+
+                {/* 4. Consistência */}
+                <MultiSelectGroup
+                    label="Consistência"
+                    options={OPTIONS.consistencia}
+                    selected={safeFragment.consistencia}
+                    onChange={(v) => updateField('consistencia', v)}
+                    showBlockInput={true}
+                    blocks={safeFragment.consistencia_blocos}
+                    onBlockChange={(opt, val) => updateBlock('consistencia', opt, val)}
+                />
+
+                {/* 5. Cor */}
+                <MultiSelectGroup
+                    label="Cor"
+                    options={OPTIONS.cor}
+                    selected={safeFragment.cor}
+                    onChange={(v) => updateField('cor', v)}
+                    showBlockInput={true}
+                    blocks={safeFragment.cor_blocos}
+                    onBlockChange={(opt, val) => updateBlock('cor', opt, val)}
+                />
+
+                {/* 6. Aparência (Externo) */}
+                <MultiSelectGroup
+                    label="Aparência (Externo)"
+                    options={OPTIONS.aparencia}
+                    selected={safeFragment.aparencia}
+                    onChange={(v) => updateField('aparencia', v)}
+                />
+
+                {/* 7. Ao Corte (Nódulo) */}
+                <MultiSelectGroup
+                    label="Ao Corte (Nódulo)"
+                    options={OPTIONS.aspecto_nodulo}
+                    selected={safeFragment.aspecto_nodulo}
+                    onChange={(v) => updateField('aspecto_nodulo', v)}
+                />
 
                 {/* 7. Representação */}
                 <MultiSelectGroup
