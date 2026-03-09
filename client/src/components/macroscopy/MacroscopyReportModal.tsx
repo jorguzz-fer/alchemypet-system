@@ -14,6 +14,7 @@ const MacroscopyReportModal = ({ record, onClose }: MacroscopyReportModalProps) 
     // State for editable report sections
     const [macroscopyText, setMacroscopyText] = useState(report.macroscopyText);
     const [cassettesText, setCassettesText] = useState(report.cassettesText);
+    const [observacoesText, setObservacoesText] = useState(report.observacoesText || '');
 
     // Per-jar AI reports (for coloração, observação, nota)
     const [aiReports, setAiReports] = useState<any[]>([]);
@@ -117,7 +118,7 @@ const MacroscopyReportModal = ({ record, onClose }: MacroscopyReportModalProps) 
 
     const handleCopy = () => {
         const fullText = `Guia: ${record.numero_guia}
-Paciente: ${record.nome_paciente}
+Pacientes: ${record.nome_paciente}
 
 MACROSCOPIA (Inclui Recebimento)
 
@@ -126,6 +127,10 @@ ${macroscopyText}
 CASSETES
 
 ${cassettesText}
+
+OBSERVAÇÕES
+
+${observacoesText}
 
 RESUMO
 Material processado: ${report.summary.fragments} fragmento(s) em ${report.summary.cassettes} cassete(s)
@@ -202,6 +207,20 @@ Total de frascos: ${report.summary.jars}`.trim();
                             onChange={(e) => setCassettesText(e.target.value)}
                         />
                     </div>
+
+                    {/* OBSERVAÇÕES */}
+                    {observacoesText !== undefined && (
+                        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-6">
+                            <h3 className="text-sm font-bold text-gray-700 uppercase mb-4 tracking-wider">Observações</h3>
+                            <textarea
+                                rows={4}
+                                className="w-full text-sm text-gray-800 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                                value={observacoesText}
+                                onChange={(e) => setObservacoesText(e.target.value)}
+                                placeholder="Nenhuma observação informada."
+                            />
+                        </div>
+                    )}
 
                     {/* Per-Jar AI Analysis (optional enhancement) */}
                     {aiReports.length > 0 && (

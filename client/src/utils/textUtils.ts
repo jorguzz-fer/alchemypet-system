@@ -105,6 +105,7 @@ export const generateMacroscopyReport = (record: any) => {
 
     const macroscopyParts: string[] = [];
     const cassetteSummaries: string[] = [];
+    const observacoesParts: string[] = [];
 
     jars.forEach((jar: any) => {
         const fragments = jar.fragments || [];
@@ -113,16 +114,17 @@ export const generateMacroscopyReport = (record: any) => {
             const fragLabel = `Fragmento ${fIndex + 1}`;
             const description = buildFragmentDescription(frag, fragLabel);
 
-            // Add Observation if present
-            const obs = frag.observacoes ? ` ${frag.observacoes}` : '';
-
-            if (totalJars > 1) {
-                macroscopyParts.push(`Frasco ${jar.numero}, ${fragLabel}: ${description}${obs}`);
-            } else {
-                macroscopyParts.push(`${fragLabel}: ${description}${obs}`);
+            // Add Observation to a separate list if present
+            if (frag.observacoes && frag.observacoes.trim() !== '') {
+                const obsLabel = totalJars > 1 ? `Frasco ${jar.numero}, ${fragLabel}` : fragLabel;
+                observacoesParts.push(`${obsLabel}: ${frag.observacoes.trim()}`);
             }
 
-            // Cassettes for this fragment
+            if (totalJars > 1) {
+                macroscopyParts.push(`Frasco ${jar.numero}, ${fragLabel}: ${description}`);
+            } else {
+                macroscopyParts.push(`${fragLabel}: ${description}`);
+            }
             if (frag.cassettes && frag.cassettes.length > 0) {
                 frag.cassettes.forEach((c: any) => {
                     cassetteSummaries.push(`${c.codigo}: ${fragLabel} (${jar.numero})`);
@@ -143,11 +145,13 @@ export const generateMacroscopyReport = (record: any) => {
     // Simplified Cassette List
     // Filter duplicates/sort if needed, but assuming unique codes
     const cassettesText = cassetteSummaries.join('\n');
+    const observacoesText = observacoesParts.join('\n');
 
     return {
         receiptText: receiptHeader, // Keeping for backward compat if needed, but mapped to fullText primarily
         macroscopyText: fullText,
         cassettesText,
+        observacoesText,
         summary: {
             jars: totalJars,
             fragments: totalFragments,
