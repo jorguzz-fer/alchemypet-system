@@ -51,7 +51,17 @@ const getOptionColor = (option: string) => {
     return PASTEL_COLORS[index];
 };
 
-const MultiSelectGroup = ({ label, options, selected, onChange }: { label: string, options: string[], selected: string[], onChange: (val: string[]) => void }) => {
+interface MultiSelectGroupProps {
+    label: string;
+    options: string[];
+    selected: string[];
+    onChange: (val: string[]) => void;
+    showBlockInput?: boolean;
+    blocks?: Record<string, string>;
+    onBlockChange?: (option: string, block: string) => void;
+}
+
+const MultiSelectGroup = ({ label, options, selected, onChange, showBlockInput, blocks, onBlockChange }: MultiSelectGroupProps) => {
     const handleSelect = (option: string) => {
         if (!selected.includes(option)) {
             onChange([...selected, option]);
@@ -71,12 +81,22 @@ const MultiSelectGroup = ({ label, options, selected, onChange }: { label: strin
                 {selected.map(item => {
                     const colorClass = getOptionColor(item);
                     return (
-                        <span key={item} className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-sm font-medium border shadow-sm ${colorClass}`}>
-                            {item}
-                            <button type="button" onClick={() => handleRemove(item)} className="hover:opacity-75 focus:outline-none">
+                        <div key={item} className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-sm font-medium border shadow-sm ${colorClass}`}>
+                            <span>{item}</span>
+                            {showBlockInput && (
+                                <input
+                                    type="text"
+                                    placeholder="Bloco"
+                                    value={blocks?.[item] || ''}
+                                    onChange={(e) => onBlockChange?.(item, e.target.value)}
+                                    className="w-16 h-6 px-1 text-xs text-black border border-gray-300 rounded ml-1 bg-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                                    onClick={(e) => e.stopPropagation()}
+                                />
+                            )}
+                            <button type="button" onClick={() => handleRemove(item)} className="hover:opacity-75 focus:outline-none ml-1">
                                 <X size={14} />
                             </button>
-                        </span>
+                        </div>
                     );
                 })}
             </div>
@@ -118,11 +138,22 @@ const FragmentSection = ({ index, fragment, onUpdate, onRemove }: FragmentSectio
         aspecto_nodulo: fragment.aspecto_nodulo || [],
         cor: fragment.cor || [],
         representacao: fragment.representacao || [],
-        cassettes: fragment.cassettes || []
+        cassettes: fragment.cassettes || [],
+        consistencia_blocos: fragment.consistencia_blocos || {},
+        cor_blocos: fragment.cor_blocos || {}
     };
 
     const updateField = (field: string, value: any) => {
         onUpdate({ ...safeFragment, [field]: value });
+    };
+
+    const updateBlock = (field: string, option: string, block: string) => {
+        const fieldName = `${field}_blocos`;
+        const currentBlocks = (safeFragment as Record<string, any>)[fieldName] || {};
+        onUpdate({
+            ...safeFragment,
+            [fieldName]: { ...currentBlocks, [option]: block }
+        });
     };
 
     return (
@@ -157,6 +188,9 @@ const FragmentSection = ({ index, fragment, onUpdate, onRemove }: FragmentSectio
                     options={OPTIONS.consistencia}
                     selected={safeFragment.consistencia}
                     onChange={(v) => updateField('consistencia', v)}
+                    showBlockInput={true}
+                    blocks={safeFragment.consistencia_blocos}
+                    onBlockChange={(opt, val) => updateBlock('consistencia', opt, val)}
                 />
 
                 {/* 3. Cor */}
@@ -165,6 +199,9 @@ const FragmentSection = ({ index, fragment, onUpdate, onRemove }: FragmentSectio
                     options={OPTIONS.cor}
                     selected={safeFragment.cor}
                     onChange={(v) => updateField('cor', v)}
+                    showBlockInput={true}
+                    blocks={safeFragment.cor_blocos}
+                    onBlockChange={(opt, val) => updateBlock('cor', opt, val)}
                 />
 
                 {/* 4. Aparência (Externo) */}
