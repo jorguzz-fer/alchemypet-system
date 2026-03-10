@@ -36,6 +36,7 @@ export const createMacroscopy = async (req: Request, res: Response) => {
                                 aspecto_nodulo: Array.isArray(frag.aspecto_nodulo) ? frag.aspecto_nodulo : (frag.aspecto_nodulo ? [frag.aspecto_nodulo] : []),
                                 aparencia: Array.isArray(frag.aparencia) ? frag.aparencia : (frag.aparencia ? [frag.aparencia] : []),
                                 caracteristicas: Array.isArray(frag.caracteristicas) ? frag.caracteristicas : (frag.caracteristicas ? [frag.caracteristicas] : []),
+                                observacoes: frag.observacoes,
                                 ...(cassettesCreate ? { cassettes: cassettesCreate } : {})
                             };
                         })
@@ -314,6 +315,7 @@ export const updateMacroscopy = async (req: Request, res: Response) => {
                                     aspecto_nodulo: Array.isArray(fragment.aspecto_nodulo) ? fragment.aspecto_nodulo : (fragment.aspecto_nodulo ? [fragment.aspecto_nodulo] : []),
                                     aparencia: Array.isArray(fragment.aparencia) ? fragment.aparencia : (fragment.aparencia ? [fragment.aparencia] : []),
                                     caracteristicas: Array.isArray(fragment.caracteristicas) ? fragment.caracteristicas : (fragment.caracteristicas ? [fragment.caracteristicas] : []),
+                                    observacoes: fragment.observacoes,
                                     cassettes: cassettesCreateInput
                                 }
                             });
@@ -330,7 +332,8 @@ export const updateMacroscopy = async (req: Request, res: Response) => {
                                     medidas_nodulo: fragment.medidas_nodulo,
                                     aspecto_nodulo: Array.isArray(fragment.aspecto_nodulo) ? fragment.aspecto_nodulo : (fragment.aspecto_nodulo ? [fragment.aspecto_nodulo] : []),
                                     aparencia: Array.isArray(fragment.aparencia) ? fragment.aparencia : (fragment.aparencia ? [fragment.aparencia] : []),
-                                    caracteristicas: Array.isArray(fragment.caracteristicas) ? fragment.caracteristicas : (fragment.caracteristicas ? [fragment.caracteristicas] : [])
+                                    caracteristicas: Array.isArray(fragment.caracteristicas) ? fragment.caracteristicas : (fragment.caracteristicas ? [fragment.caracteristicas] : []),
+                                    observacoes: fragment.observacoes
                                 }
                             });
                         }
