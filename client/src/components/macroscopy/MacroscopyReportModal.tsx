@@ -29,15 +29,27 @@ const MacroscopyReportModal = ({ record, onClose }: MacroscopyReportModalProps) 
     // Initialize AI Reports
     useEffect(() => {
         if (record && record.jars) {
-            const mappedReports = record.jars.map((jar: any) => ({
-                jar_id: jar.id,
-                jar_numero: jar.numero,
-                macroscopia: jar.macroscopia || '',
-                coloracao: jar.coloracao || '',
-                observacao: jar.observacao || '',
-                nota: jar.nota || '',
-                generated: !!(jar.macroscopia)
-            }));
+            const mappedReports = record.jars.map((jar: any) => {
+                // Gather observations from fragments if not present on the jar directly yet
+                let initialObs = jar.observacao || '';
+                if (!initialObs && jar.fragments && jar.fragments.length > 0) {
+                    const fragObs = jar.fragments
+                        .map((f: any, i: number) => f.observacoes ? `Fragmento ${i + 1}: ${f.observacoes}` : null)
+                        .filter(Boolean)
+                        .join('\n');
+                    initialObs = fragObs;
+                }
+
+                return {
+                    jar_id: jar.id,
+                    jar_numero: jar.numero,
+                    macroscopia: jar.macroscopia || '',
+                    coloracao: jar.coloracao || '',
+                    observacao: initialObs,
+                    nota: jar.nota || '',
+                    generated: !!(jar.macroscopia)
+                };
+            });
             setAiReports(mappedReports);
         }
     }, [record]);

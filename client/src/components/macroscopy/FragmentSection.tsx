@@ -180,7 +180,7 @@ const FragmentSection = ({ index, fragment, onUpdate, onRemove }: FragmentSectio
                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Medidas do Fragmento</label>
                     <input
                         type="text"
-                        className="w-full text-sm border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                        className="w-full text-sm border-2 border-gray-200 rounded focus:ring-purple-500 focus:border-purple-500"
                         placeholder="Ex: 3,0 x 2,0 x 1,5 cm"
                         value={safeFragment.medidas || ''}
                         onChange={(e) => updateField('medidas', e.target.value)}
