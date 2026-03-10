@@ -18,9 +18,19 @@ const buildFragmentDescription = (fragment: any, _fragmentLabel: string): string
     const parts: string[] = [];
 
     // Characteristics (tissue type)
-    const caracteristicas = fragment.caracteristicas || [];
+    let caracteristicas = fragment.caracteristicas || [];
+
     if (caracteristicas.length > 0) {
-        parts.push(`Fragmento de tecido ${caracteristicas.map((c: string) => c.toLowerCase()).join(', ')}`);
+        // Handle organ name specificity first
+        if (caracteristicas.includes('Órgão') && fragment.orgao_nome) {
+            // Replace 'órgão' with the specific organ name provided by the user
+            caracteristicas = caracteristicas.map((c: string) =>
+                c === 'Órgão' ? fragment.orgao_nome.toLowerCase() : c
+            );
+            parts.push(`Fragmento de tecido de ${caracteristicas.map((c: string) => c.toLowerCase()).join(', ')}`);
+        } else {
+            parts.push(`Fragmento de tecido ${caracteristicas.map((c: string) => c.toLowerCase()).join(', ')}`);
+        }
     } else {
         parts.push('Fragmento de tecido');
     }

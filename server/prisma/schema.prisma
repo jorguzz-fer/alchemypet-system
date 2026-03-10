@@ -73,6 +73,7 @@ model Fragment {
   cor             String[]
   representacao   String[]
   observacoes     String?
+  orgao_nome      String?
   created_at      DateTime  @default(now()) @map("created_at")
 
   jar             Jar       @relation(fields: [frasco_id], references: [id], onDelete: Cascade)
