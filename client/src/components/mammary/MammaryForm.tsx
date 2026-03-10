@@ -314,7 +314,7 @@ const MammaryForm = ({ onSaveSuccess }: MammaryFormProps) => {
                                     max="10"
                                     value={jar.fragments?.length || 0}
                                     onChange={(e) => handleFragmentCountChange(jarIndex, e.target.value)}
-                                    className="w-16 px-2 py-1 text-center font-bold text-pink-700 border-gray-300 rounded focus:ring-pink-500 focus:border-pink-500"
+                                    className="w-16 px-2 py-1 flex-shrink-0 text-center font-bold text-pink-700 bg-pink-50 border-2 border-pink-200 rounded focus:bg-white focus:ring-pink-500 focus:border-pink-500 transition-colors cursor-text hover:bg-pink-100"
                                 />
                             </div>
 

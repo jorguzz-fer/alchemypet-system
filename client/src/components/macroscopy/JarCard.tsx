@@ -88,7 +88,7 @@ const JarCard = ({ index, jar, onUpdate, onRemove }: JarCardProps) => {
                         max="20"
                         value={jar.fragments?.length || 0}
                         onChange={(e) => handleFragmentCountChange(e.target.value)}
-                        className="w-16 px-2 py-1 text-center font-bold text-purple-700 border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                        className="w-16 px-2 py-1 flex-shrink-0 text-center font-bold text-purple-700 bg-purple-50 border-2 border-purple-200 rounded focus:bg-white focus:ring-purple-500 focus:border-purple-500 transition-colors cursor-text hover:bg-purple-100"
                     />
                 </div>
 
