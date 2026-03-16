@@ -89,6 +89,7 @@ const Macroscopy = () => {
                 <MacroscopyReportModal
                     record={selectedReportExam}
                     onClose={() => setSelectedReportExam(null)}
+                    onSaved={() => setRefreshTrigger(prev => prev + 1)}
                 />
             )}
         </div>

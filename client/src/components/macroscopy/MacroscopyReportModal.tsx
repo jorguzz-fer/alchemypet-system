@@ -6,9 +6,10 @@ import api from '../../services/api';
 interface MacroscopyReportModalProps {
     record: any;
     onClose: () => void;
+    onSaved?: () => void;
 }
 
-const MacroscopyReportModal = ({ record, onClose }: MacroscopyReportModalProps) => {
+const MacroscopyReportModal = ({ record, onClose, onSaved }: MacroscopyReportModalProps) => {
     const report = generateMacroscopyReport(record);
 
     // State for editable report sections - prefer saved text from DB, fallback to generated
@@ -108,14 +109,19 @@ const MacroscopyReportModal = ({ record, onClose }: MacroscopyReportModalProps) 
                 }))
             };
 
-            await api.put(`/api/macroscopy/${record.id}`, payload);
+            const response = await api.put(`/api/macroscopy/${record.id}`, payload);
+            const updatedRecord = response.data;
+
+            // Update local record with saved data
+            Object.assign(record, updatedRecord);
 
             if (signed) {
                 alert('Análise assinada e salva com sucesso!');
+                onSaved?.();
                 onClose();
-                window.location.reload();
             } else {
                 alert('Salvo com sucesso!');
+                onSaved?.();
             }
         } catch (error) {
             console.error("Erro ao salvar:", error);
