@@ -11,10 +11,10 @@ interface MacroscopyReportModalProps {
 const MacroscopyReportModal = ({ record, onClose }: MacroscopyReportModalProps) => {
     const report = generateMacroscopyReport(record);
 
-    // State for editable report sections
-    const [macroscopyText, setMacroscopyText] = useState(report.macroscopyText);
-    const [cassettesText, setCassettesText] = useState(report.cassettesText);
-    const [observacoesText, setObservacoesText] = useState(report.observacoesText || '');
+    // State for editable report sections - prefer saved text from DB, fallback to generated
+    const [macroscopyText, setMacroscopyText] = useState(record.macroscopy_text || report.macroscopyText);
+    const [cassettesText, setCassettesText] = useState(record.cassettes_text || report.cassettesText);
+    const [observacoesText, setObservacoesText] = useState(record.observacoes_text || report.observacoesText || '');
 
     // Per-jar AI reports (for coloração, observação, nota)
     const [aiReports, setAiReports] = useState<any[]>([]);
@@ -95,6 +95,9 @@ const MacroscopyReportModal = ({ record, onClose }: MacroscopyReportModalProps) 
                 is_signed: signed,
                 signed_by: signedBy,
                 signed_at: signed ? new Date().toISOString() : null,
+                macroscopy_text: macroscopyText,
+                cassettes_text: cassettesText,
+                observacoes_text: observacoesText,
                 jars: aiReports.map(report => ({
                     id: report.jar_id,
                     numero: report.jar_numero,

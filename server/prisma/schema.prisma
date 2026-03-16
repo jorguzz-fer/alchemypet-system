@@ -18,7 +18,12 @@ model MacroscopyRecord {
   total_frascos   Int       @default(0) @map("total_frascos")
   total_fragmentos Int      @default(0) @map("total_fragmentos")
   total_cassetes  Int       @default(0) @map("total_cassetes")
-  
+
+  // Editable report text fields
+  macroscopy_text   String?   @map("macroscopy_text")
+  cassettes_text    String?   @map("cassettes_text")
+  observacoes_text  String?   @map("observacoes_text")
+
   // Signature & Validation
   is_validated    Boolean   @default(false) @map("is_validated")
   is_signed       Boolean   @default(false) @map("is_signed")
